@@ -39,7 +39,7 @@ dm.write_fits('./F158_642s.fits')
 - matplotlib
 - astropy
 - astroquery
-- romanisim
+- romanisim (https://github.com/AstroJacobLi/romanisim)
 - artpop
 - asdf
 - roman_datamodels
@@ -49,3 +49,6 @@ MIT
 
 ## Future plans
 - Add stellar population information to the `meta` of ASDF
+- Enable more sky options
+- Enable composite stellar population, enable user inputs on structural parameters
+- Improve documentation and examples

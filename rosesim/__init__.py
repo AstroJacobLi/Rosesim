@@ -27,6 +27,16 @@ pixel_scale = 0.11  # arcsec/pixel for Roman WFI
 Roman_zp_AB_Vega_mist = {"R062": 0.137095, "Z087": 0.487379, "Y106": 0.653780,
                    "J129": 0.958363, "W146": 1.024467, "H158": 1.287404, "F184": 1.551332}
 
+# This is derived using the photometric zeropoints from https://github.com/RomanSpaceTelescope/roman-technical-information/tree/main/data/WideFieldInstrument/Imaging/ZeroPoints. Should work for any isochrones. 
+Roman_zp_AB_Vega_parsec = {'F062': 0.1516780915703379,
+    'F087': 0.5133462686585959,
+    'F106': 0.6609068434593195,
+    'F129': 1.1056961143945754,
+    'F146': 1.1618106810147644,
+    'F158': 1.3186852414129346,
+    'F184': 1.558177315836199,
+    'F213': 1.8362285584721012}
+
 # JWST Vega mag to AB mag: https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-absolute-flux-calibration-and-zeropoints#NIRCamAbsoluteFluxCalibrationandZeropoints-NRC_zeropoints&gsc.tab=0
 # The following values are detla_ZP = mag_AB - mag_Vega. To convert from Vega to AB, we need to add these values.
 JWST_zp_AB_Vega = {'F070W': 0.29540789653321275,
