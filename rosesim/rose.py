@@ -211,12 +211,14 @@ class RomanSky(object):
             full_table = vstack([full_table, self.star_cat], join_type='inner')
         else:
             pass
+        
+        if (not include_star) and (not include_bkg):
+            print('No sources to be included, so it will generate an empty sky.')
+            full_table = self.bkg_cat[:0]
 
-        if full_table is None:
-            raise ValueError("No sources to include in the catalog. Please include either Gaia stars or background galaxies.")
         full_table.write(f'./temp/sky_table.ecsv', format='ascii.ecsv', overwrite=True)
         self.obj_cat = full_table
-        
+
 
     def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, psf_fov_arcsec=5):
         cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} /scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/{self.prefix}/{band}_{exptime}s.asdf /scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/{self.prefix}/temp/sky_table.ecsv"

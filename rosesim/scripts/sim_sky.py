@@ -53,3 +53,9 @@ def simulate_sky(obs_ra=150.1049, obs_dec=2.2741, size=5001, prefix='sky_jaguar'
 def main():
     import fire
     fire.Fire(simulate_sky)
+
+
+# rosesim_sky --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal_new' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True --psf_fov_arcsec=10
+
+# If you wanna make an empty sky, you can use the following command:
+# rosesim_sky --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal_new' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False

@@ -13,7 +13,36 @@ pip install -e .
 ```
 You need to set `ROSESIM_DATA_PATH` in your environment variables, e.g., add `export ROSESIM_DATA_PATH=/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/` to `.bashrc`.
 
-You also need to download the [JAGUAR](https://fenrir.as.arizona.edu/jaguar/download_jaguar_files.html) catalog to make background sky image. Just put the catalog files in the `ROSESIM_DATA_PATH` directory, such as `ROSESIM_DATA_PATH/JAGUAR/JADES_all_mock_r1_v1.2.fits`. If you wanna use other catalogs for background galaxies, take a look at the `RomanSky.load_jaguar_bkg` function!
+Then in Python, you can download the data needed for Rosesim with:
+```python
+import rosesim
+rosesim.fetch_data()
+```
+The data will be downloaded to the directory specified by `ROSESIM_DATA_PATH`. The following sections describes the data files needed for Rosesim.
+
+### Stellar Population Synthesis Models
+The [PARSEC isochrones](https://stev.oapd.inaf.it/cgi-bin/cmd) are required for the stellar population synthesis. I have prepared them for you. The isochrones for Roman are in **Vega** magnitudes. You have to add the zeropoint offsets to convert them to **AB** magnitudes. The zeropoint offsets are stored in `rosesim.Roman_zp_AB_Vega_mist`. Unfortunately, `artpop` doesn't support the PARSEC isochrones to be interpolated (yet), so the available simple stellar populations are:
+
+**Available filters:**  
+['F062', 'F087', 'F106', 'F129', 'F158', 'F184', 'F146', 'F213']
+
+**Available log(age / yr):**  
+[8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9,  
+ 9.0, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 10.0, 10.1]
+
+**Available metallicities [Fe/H]:**  
+[−2.00, −1.75, −1.50, −1.25, −1.00, −0.75, −0.50, −0.25, 0.00, +0.25]
+
+In PARSEC, I set the resolution of the thermal pulse cycles in the COLIBRI section: ninTPC=20 as detailed in Marigo et al. (2017). This is to make AGB stars more resolved, see [Lee et al. (2025)](https://ui.adsabs.harvard.edu/abs/2025ApJ...995..135L/abstract) for more details.
+
+### Background Sky Model
+You also need a realistic sky background (including MW stars and background galaxies). I have also prepared a sky model for you. It takes a simulated galaxy catalog called [JAGUAR](https://fenrir.as.arizona.edu/jaguar/download_jaguar_files.html) and the Milky Way star catalog from the [TRILEGAL](https://stev.oapd.inaf.it/trilegal) model. 
+
+> [!CAUTION]
+> JAGUAR is for JWST filters. I need to figure out the conversion from JWST to Roman filters.
+
+The sky model is made following `notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb`, or using the script `rosesim/scripts/sim_sky.py`. If you wanna use other catalogs for background galaxies or MW stars, take a look at the `RomanSky.load_jaguar_bkg` and `RomanSky.load_trilegal_star` functions in `rosesim/rose.py`!
+
 
 ## Usage
 
@@ -39,9 +68,10 @@ dm.write_fits('./F158_642s.fits')
 - matplotlib
 - astropy
 - astroquery
-- romanisim (https://github.com/AstroJacobLi/romanisim)
+- romanisim (https://github.com/AstroJacobLi/romanisim). Note that this version is required because I have modified the code to better support star injection.
 - artpop
 - asdf
+- astrocut
 - roman_datamodels
 
 ## License
