@@ -33,7 +33,7 @@ The [PARSEC isochrones](https://stev.oapd.inaf.it/cgi-bin/cmd) are required for 
 **Available metallicities [Fe/H]:**  
 [−2.00, −1.75, −1.50, −1.25, −1.00, −0.75, −0.50, −0.25, 0.00, +0.25]
 
-In PARSEC, I set the resolution of the thermal pulse cycles in the COLIBRI section: ninTPC=20 as detailed in Marigo et al. (2017). This is to make AGB stars more resolved, see [Lee et al. (2025)](https://ui.adsabs.harvard.edu/abs/2025ApJ...995..135L/abstract) for more details.
+In PARSEC, I set the resolution of the thermal pulse cycles in the COLIBRI section: `ninTPC=20` as detailed in Marigo et al. (2017). This is to make AGB stars more resolved, see [Lee et al. (2025)](https://ui.adsabs.harvard.edu/abs/2025ApJ...995..135L/abstract) for more details.
 
 ### Background Sky Model
 You also need a realistic sky background (including MW stars and background galaxies). I have also prepared a sky model for you. It takes a simulated galaxy catalog called [JAGUAR](https://fenrir.as.arizona.edu/jaguar/download_jaguar_files.html) and the Milky Way star catalog from the [TRILEGAL](https://stev.oapd.inaf.it/trilegal) model. 
@@ -43,18 +43,35 @@ You also need a realistic sky background (including MW stars and background gala
 
 The sky model is made following `notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb`, or using the script `rosesim/scripts/sim_sky.py`. If you wanna use other catalogs for background galaxies or MW stars, take a look at the `RomanSky.load_jaguar_bkg` and `RomanSky.load_trilegal_star` functions in `rosesim/rose.py`!
 
+In `ROSESIM_DATA_PATH/sky_jaguar_trilegal`, you will find the sky model I prepared for you. The catalog of galaxies and stars in that sky model is under `ROSESIM_DATA_PATH/sky_jaguar_trilegal/temp/`. You can read the ASDF file and write it to FITS (to view it in DS9) following the example:
+
+```python
+import rosesim
+sky_dm = rosesim.read_L3_asdf('./F158_642s.asdf')
+rosesim.asdf_to_fits(sky_dm, 'F158_642s.fits', subtract_bkg=True)
+```
+
 
 ## Usage
 
 Run as a script:
-```bash
-rosesim_sky --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True --exptime=642 --psf_fov_arcsec=10
 
+To construct the sky model with JAGUAR galaxies and TRILEGAL stars, use:
+```bash
+rosesim_sky --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True --psf_fov_arcsec=10
+```
+If you only want to make an empty sky model, you can use the following command:
+```bash
+rosesim_sky --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal_new' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+```
+
+To simulate a single galaxy, use:
+```bash
 rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642
 ```
 
 
-Reading a simulated image and write it to fits:
+To read a simulated image and write it to fits:
 ```python
 import rosesim
 
