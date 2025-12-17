@@ -35,6 +35,9 @@ The [PARSEC isochrones](https://stev.oapd.inaf.it/cgi-bin/cmd) are required for 
 
 In PARSEC, I set the resolution of the thermal pulse cycles in the COLIBRI section: `ninTPC=20` as detailed in Marigo et al. (2017). This is to make AGB stars more resolved, see [Lee et al. (2025)](https://ui.adsabs.harvard.edu/abs/2025ApJ...995..135L/abstract) for more details.
 
+### TRILEGAL: MW star model
+I use the [TRILEGAL](https://stev.oapd.inaf.it/trilegal) model to generate the MW star catalog. The input parameters for TRILEGAL are (RA=10h, Dec=2.27 deg), limiting magnitude in 4th filter is set to 30 mag. The filters are Roman latest filters (2024) in Vega. The star catalog can be found in `ROSESIM_DATA_PATH/TRILEGAL/`.
+
 ### Background Sky Model
 You also need a realistic sky background (including MW stars and background galaxies). I have also prepared a sky model for you. It takes a simulated galaxy catalog called [JAGUAR](https://fenrir.as.arizona.edu/jaguar/download_jaguar_files.html) and the Milky Way star catalog from the [TRILEGAL](https://stev.oapd.inaf.it/trilegal) model. 
 

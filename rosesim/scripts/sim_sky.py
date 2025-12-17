@@ -43,7 +43,7 @@ def simulate_sky(obs_ra=150.1049, obs_dec=2.2741, size=5001, prefix='sky_jaguar'
     radius = sky.xy_dim[0] * 0.11 / 3600
     sky.obs_time = Time('2025-01-01T00:00:00')
     # sky.load_gaia_star(radius=radius)
-    sky.load_trilegal_star(radius=radius, path=os.path.join(DATA_PATH, 'TRILEGAL', 'trilegal.dat'))
+    sky.load_trilegal_star(radius=radius, path=os.path.join(DATA_PATH, 'TRILEGAL', 'trilegal_Roman_30mag_10h_0deg.dat'))
     sky.load_jaguar_bkg(radius=radius, seed=seed)
     sky.gen_catalog(include_bkg=include_bkg, include_star=include_star)
 

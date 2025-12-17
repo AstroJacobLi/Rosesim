@@ -14,9 +14,10 @@ import roman_datamodels as rdm
 
 from rosesim.utils import read_L3_asdf, make_wcs, create_point_source_catalogue, create_smoooth_sersic_catalogue, asdf_to_fits, make_jaguar_galaxies
 
+from rosesim import DATA_PATH
 
 class RomanGalaxy(object):
-    def __init__(self, prefix='dwarf_1e7_80Mpc', data_dir='/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/'):
+    def __init__(self, prefix='dwarf_1e7_80Mpc', data_dir=DATA_PATH):
         if not os.path.isdir(os.path.join(data_dir, prefix)):
             os.makedirs(os.path.join(data_dir, prefix))
         os.chdir(os.path.join(data_dir, prefix))
@@ -88,7 +89,7 @@ class RomanGalaxy(object):
 class RomanSky(object):
     def __init__(self, ra, dec, xy_dim=(2001, 2001), pa=0,
                  prefix='dwarf_1e7_80Mpc', 
-                 data_dir='/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/'):
+                 data_dir=DATA_PATH):
         if not os.path.isdir(os.path.join(data_dir, prefix)):
             os.makedirs(os.path.join(data_dir, prefix))
         os.chdir(os.path.join(data_dir, prefix))
@@ -129,7 +130,7 @@ class RomanSky(object):
         self.star_cat = gaia_cat
         
     def load_trilegal_star(self, radius=0.2, 
-                           path='/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/TRILEGAL/trilegal.dat', 
+                           path=DATA_PATH + '/TRILEGAL/trilegal_Roman_30mag_10h_0deg.dat', 
                            area=1, seed=42):
         """
         Load MW stars from TRILEGAL (https://stev.oapd.inaf.it/~webmaster/trilegal_1.6/help.html).
@@ -221,7 +222,7 @@ class RomanSky(object):
 
 
     def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, psf_fov_arcsec=5):
-        cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} /scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/{self.prefix}/{band}_{exptime}s.asdf /scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/{self.prefix}/temp/sky_table.ecsv"
+        cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table.ecsv"
 
         print(f'Making mock Roman L3 image in {band} for {self.prefix}')
         os.system(cmd)
