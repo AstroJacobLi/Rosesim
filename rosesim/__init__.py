@@ -28,6 +28,11 @@ Roman_zp_AB_Vega_mist = {"R062": 0.137095, "Z087": 0.487379, "Y106": 0.653780,
                    "J129": 0.958363, "W146": 1.024467, "H158": 1.287404, "F184": 1.551332}
 
 # This is derived using the photometric zeropoints from https://github.com/RomanSpaceTelescope/roman-technical-information/tree/main/data/WideFieldInstrument/Imaging/ZeroPoints. Should work for any isochrones. 
+# tab = Table.read("/home/jiaxuanl/Research/Rosesim/data/Roman_zeropoints_20240301.ecsv", format="ascii.ecsv")filters = np.unique(tab['element'])
+# Roman_zp_AB_Vega_parsec = dict()
+# for filt in filters:
+#     temp = tab[tab['element'] == filt]
+#     Roman_zp_AB_Vega_parsec[filt] = np.mean(temp['ABMag'] - temp['VegaMag'])
 Roman_zp_AB_Vega_parsec = {'F062': 0.1516780915703379,
     'F087': 0.5133462686585959,
     'F106': 0.6609068434593195,
