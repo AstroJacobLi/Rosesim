@@ -8,16 +8,16 @@
 ## Installation
 
 ### 1. Install the Package
-You can install **RoSE-Sim** locally by cloning the repository and running:
+You can install **Rosesim** locally by cloning the repository and running:
 
 ```bash
-git clone https://github.com/YourUsername/Rosesim.git
+git clone git@github.com:AstroJacobLi/Rosesim.git
 cd Rosesim
 pip install -e .
 ```
 
 ### 2. Set Up Environment Variables
-**RoSE-Sim** requires a dedicated data directory to store large files (e.g., isochrones, sky models). 
+**Rosesim** requires a dedicated data directory to store large files (e.g., isochrones, sky models). 
 
 1. Create a directory for the data (e.g., `/scratch/gpfs/user/Rosesim_Data`).
 2. Set the `ROSESIM_DATA_PATH` environment variable pointing to this directory. Add the following line to your shell configuration file (e.g., `~/.bashrc` or `~/.zshrc`):
@@ -43,7 +43,7 @@ This command downloads the required isochrones and sky models to your `ROSESIM_D
 ## Data Description
 
 ### Stellar Population Synthesis Models
-**RoSE-Sim** uses [PARSEC isochrones](https://stev.oapd.inaf.it/cgi-bin/cmd) for stellar population synthesis. 
+**Rosesim** uses [PARSEC isochrones](https://stev.oapd.inaf.it/cgi-bin/cmd) for stellar population synthesis. 
 
 - **Isochrones:** Pre-packaged for Roman filters. Note that Roman isochrones are provided in **Vega** magnitudes.
 - **Conversion:** Zeropoint offsets to convert to **AB** magnitudes are available in `rosesim.Roman_zp_AB_Vega_mist`.
@@ -72,7 +72,7 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 
 ### Command Line Interface
 
-**RoSE-Sim** provides command-line scripts for common simulation tasks.
+**Rosesim** provides command-line scripts for common simulation tasks.
 
 #### 1. Simulate a Sky Model
 Generate a full sky model including background galaxies and Milky Way stars:
@@ -143,6 +143,7 @@ The package relies on the following libraries:
 - [ ] Support more diverse sky background options.
 - [ ] Support composite stellar populations and user-defined structural parameters.
 - [ ] Expand documentation and examples.
+- [ ] Enable photometry on the simulated images.
 
 ## License
 MIT
