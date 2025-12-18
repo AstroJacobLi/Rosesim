@@ -101,7 +101,8 @@ rosesim_sky \
   --filters="['F106', 'F129', 'F158']" \
   --seed=42 \
   --include_bkg=False \
-  --include_star=False
+  --include_star=False \
+  --psf_fov_arcsec=10
 ```
 
 #### 2. Simulate a Single Dwarf Galaxy

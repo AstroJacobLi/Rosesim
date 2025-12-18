@@ -134,7 +134,7 @@ class RomanSky(object):
                            area=1, seed=42):
         """
         Load MW stars from TRILEGAL (https://stev.oapd.inaf.it/~webmaster/trilegal_1.6/help.html).
-        
+
         Parameters
         ----------
         radius: float
@@ -209,9 +209,15 @@ class RomanSky(object):
             full_table = None
 
         if include_star and len(self.star_cat) != 0:
-            full_table = vstack([full_table, self.star_cat], join_type='inner')
+            if include_bkg and len(self.bkg_cat) != 0:
+                full_table = vstack([full_table, self.star_cat], join_type='inner')
+            else:
+                full_table = self.star_cat
         else:
-            pass
+            if include_bkg and len(self.bkg_cat) != 0:
+                full_table = self.bkg_cat
+            else:
+                pass
         
         if (not include_star) and (not include_bkg):
             print('No sources to be included, so it will generate an empty sky.')
