@@ -69,6 +69,4 @@ JWST_zp_AB_Vega = {'F070W': 0.29540789653321275,
  'F480M': 3.43507067599531}
 
 from .utils import read_L3_asdf
-
-
 from .data import fetch_data

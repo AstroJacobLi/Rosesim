@@ -1,9 +1,6 @@
 import numpy as np
 import astropy.units as u
 import os, sys
-sys.path.append('/home/jiaxuanl/Research/SALAD/script/')
-import kuaizi
-kuaizi.set_env(project='SBF', name='Rosesim', data_dir='/scratch/gpfs/JENNYG/jiaxuanl/Data')
 
 import roman_datamodels as rdm
 from romanisim import ris_make_utils as ris
@@ -17,7 +14,7 @@ from rosesim import DATA_PATH, pixel_scale
 
 
 def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30, 
-               age=5, feh=-1.5, abs_mag_lim=-1, filters=['F129', 'F158', 'F106'], exptime=642, 
+               log_age=9.0, feh=-1.5, abs_mag_lim=0, filters=['F129', 'F158', 'F106'], exptime=642, 
                n=0.8, theta=100, ellip=0.3,
                sky_model=DATA_PATH + "sky_jaguar_trilegal/"):
     """
@@ -33,7 +30,7 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
         The logarithm of the stellar mass of the galaxy.
     distance : float
         The distance to the galaxy.
-    age : float
+    log_age : float
         The log age [yr] of the galaxy, e.g., 9 means 1 Gyr.
     feh : float
         The [Fe/H] metallicity of the galaxy.
@@ -61,13 +58,13 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
     if feh == None:
         feh = rosesim.mass_feh_kirby(log_m_star)
 
-    gal_kwargs = {'age': age * u.Gyr,
+    gal_kwargs = {'age': 10**log_age * u.yr,
                   'feh': feh,
                   'total_mass': 10**log_m_star,
                   'r_eff': 10**rosesim.mass_size_carlsten(log_m_star) / 1000 * u.kpc,
                   'distance': distance * u.Mpc}
 
-    gal = RomanGalaxy(prefix=f'dw_1e{log_m_star:.1f}_{int(gal_kwargs["distance"].to(u.Mpc).value)}Mpc_{gal_kwargs["age"].value:.1f}Gyr', data_dir=DATA_PATH)
+    gal = RomanGalaxy(prefix=f'dw_1e{log_m_star:.1f}_{int(gal_kwargs["distance"].to(u.Mpc).value)}Mpc_age{np.log10(gal_kwargs["age"].value):.1f}_feh{gal_kwargs["feh"]:.1f}', data_dir=DATA_PATH)
 
     print(f'Simulating galaxy {gal.prefix}')
 
@@ -81,30 +78,29 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
     mag_lim = dmod + abs_mag_lim
     mag_lim = max(mag_lim, 28.0)
     print('mag lim', mag_lim)
-    
-    src = artpop.MISTSersicSSP(
-        log_age=np.log10(gal_kwargs['age'].to(u.yr).value),        # log of age in years
-        feh=gal_kwargs['feh'],           # metallicity [Fe/H]
-        r_eff=gal_kwargs['r_eff'],
-        n=n, theta=theta * u.deg, ellip=ellip,
-        total_mass=gal_kwargs['total_mass'],
-        mag_limit=mag_lim,
-        mag_limit_band='H158',
-        phot_system='WFIRST', # in vega
-        distance=gal_kwargs['distance'],
-        xy_dim=s, 
-        pixel_scale=rosesim.pixel_scale,
-        random_state=rng,
-    )
+
+    ### Using PARSEC isochrones
+    iso = artpop.Isochrone.from_parsec(
+        os.path.join(DATA_PATH, 'PARSEC/PARSEC_v1.2S_Roman_vega_nTP20.dat'),
+        log_age=np.log10(gal_kwargs['age'].to(u.yr).value), 
+        MH=gal_kwargs['feh'])
+    iso.mag_table.rename_columns(iso.filters, [item.replace('mag', '') for item in iso.filters])
+    sp = artpop.SSP(iso, total_mass=gal_kwargs['total_mass'],
+                    distance=gal_kwargs['distance'],
+                    mag_limit=mag_lim, mag_limit_band='F158',
+                    random_state=rng)
+    src = artpop.SersicSP(sp, n=n, theta=theta * u.deg, ellip=ellip,
+                        r_eff=gal_kwargs['r_eff'], xy_dim=s, 
+                        pixel_scale=rosesim.pixel_scale)
     print('# of stars', src.num_stars)
     print('Sampled mass fraction:', src.sp.sampled_mass / src.sp.total_mass)
     # convert Vega to AB
     for filt in src.mags.colnames:
-        src.mags[filt] += rosesim.Roman_zp_AB_Vega_mist[filt]
+        src.mags[filt] += rosesim.Roman_zp_AB_Vega_parsec[filt]
 
-    print('Total mag from stars', -2.5 * np.log10(np.sum(10**(-0.4 * src.mags['H158']))))
-    print('Total mag fron smooth', src.sp.mag_integrated_component('H158'))
-    print('SB of smooth', src.sp.mag_integrated_component('H158') + 2.5 * np.log10(2 * np.pi * src.smooth_model.r_eff.value**2 * 0.11**2))
+    print('Total mag from stars', -2.5 * np.log10(np.sum(10**(-0.4 * src.mags['F158']))))
+    print('Total mag fron smooth', src.sp.mag_integrated_component('F158'))
+    print('SB of smooth', src.sp.mag_integrated_component('F158') + 2.5 * np.log10(2 * np.pi * src.smooth_model.r_eff.value**2 * rosesim.pixel_scale**2))
 
     gal.load_src(src, ra=obs_ra, dec=obs_dec)
     gal.gen_catalog()

@@ -1,6 +1,5 @@
 import numpy as np
 import os, sys
-sys.path.append('/home/jiaxuanl/Research/SALAD/script/')
 
 from astropy.time import Time
 from astropy import units as u
