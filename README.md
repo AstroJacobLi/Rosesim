@@ -72,7 +72,7 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 
 ### Command Line Interface
 
-**Rosesim** provides command-line scripts for common simulation tasks.
+**Rosesim** provides command-line scripts for common simulation tasks. The scripts are located in `rosesim/scripts/`.
 
 #### 1. Simulate a Sky Model
 Generate a full sky model including background galaxies and Milky Way stars:
@@ -105,6 +105,8 @@ rosesim_sky \
   --psf_fov_arcsec=10
 ```
 
+Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
+
 #### 2. Simulate a Single Dwarf Galaxy
 Inject a specific dwarf galaxy into a simulation:
 ```bash
@@ -114,8 +116,30 @@ rosesim_gal \
   --distance=5 \
   --age=1.0 \
   --log_m_star=4 \
-  --exptime=642
+  --exptime=642 \
+  --sky_model=DATA_PATH + "/sky_jaguar_trilegal/"
 ```
+
+A full list of options for simulating the dwarf galaxy is as follows:
+```python
+simulate_galaxy(
+    obs_ra=150.1049,
+    obs_dec=2.2741,
+    log_m_star=6,
+    distance=30,
+    age=5,
+    feh=-1.5,
+    abs_mag_lim=-1,
+    filters=["F129", "F158", "F106"],
+    exptime=642,
+    n=0.8,
+    theta=100,
+    ellip=0.3,
+    sky_model=DATA_PATH + "sky_jaguar_trilegal/",
+)
+```
+
+Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc.
 
 ### Python API
 
