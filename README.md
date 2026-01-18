@@ -1,5 +1,7 @@
 # RoSE-Sim: Roman Semi-resolved Galaxy Simulator
 <a href="https://doi.org/10.5281/zenodo.18274779"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.18274779.svg" alt="DOI"></a>
+[![DOI:10.1101/2021.01.08.425840](http://img.shields.io/badge/DOI-10.1101/2021.01.08.425840-B31B1B.svg)](https://doi.org/10.1101/2021.01.08.425840)
+
 **RoSE-Sim** is a Python package designed for creating image simulations of semi-resolved dwarf galaxies for the Nancy Grace Roman Space Telescope.
 
 <!-- insert demo.png  -->
