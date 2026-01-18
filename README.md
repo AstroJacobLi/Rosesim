@@ -1,9 +1,25 @@
 # RoSE-Sim: Roman Semi-resolved Galaxy Simulator
+[![DOI](https://zenodo.org/badge/1037525690.svg)](https://doi.org/10.5281/zenodo.18274778)
 
 **RoSE-Sim** is a Python package designed for creating image simulations of semi-resolved dwarf galaxies for the Nancy Grace Roman Space Telescope.
 
 <!-- insert demo.png  -->
 ![Concept of Rosesim](demo.png)
+
+## Citation
+If you use `Rosesim` in your work, please cite it:
+```tex
+@software{jiaxuan_li_2026_18274779,
+  author       = {Jiaxuan Li},
+  title        = {AstroJacobLi/Rosesim: v1.0},
+  month        = jan,
+  year         = 2026,
+  publisher    = {Zenodo},
+  version      = {v1.0},
+  doi          = {10.5281/zenodo.18274779},
+  url          = {https://doi.org/10.5281/zenodo.18274779},
+}
+```
 
 ## Installation
 
@@ -57,8 +73,11 @@ This command downloads the required isochrones and sky models to your `ROSESIM_D
 ### Milky Way Star Model
 A Milky Way star catalog is generated using the [TRILEGAL](https://stev.oapd.inaf.it/trilegal) model.
 - **Default Field:** RA = 10h, Dec = 2.27 deg
+- **FoV**: 1 square degrees
 - **Depth:** Limiting magnitude of 30 mag in the 4th filter.
 - **Location:** Stored in `ROSESIM_DATA_PATH/TRILEGAL/`.
+
+I have also downloaded the TRILEGAL models for NGC 253 (0.7925372h, -25.2888000 deg); Cen A (NGC5128, 13.4246944h, -43.0166667deg).
 
 ### Background Sky Model
 To simulate realistic observations, `Rosesim` includes a background sky model comprising:
@@ -66,7 +85,7 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 2. **Foreground Stars:** From the TRILEGAL model.
 
 > [!CAUTION]
-> JAGUAR fluxes are currently based on JWST filters. A conversion to Roman filters is pending.
+> JAGUAR fluxes are currently based on JWST filters, and are converted to Roman filters using simple stellar population models. Also the background galaxies do not have any spatial clustering.
 
 ## Usage
 
@@ -78,31 +97,55 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 Generate a full sky model including background galaxies and Milky Way stars:
 ```bash
 rosesim_sky \
-  --obs_ra=150.1049 \
-  --obs_dec=2.2741 \
-  --size=5001 \
-  --prefix='sky_jaguar_trilegal' \
-  --exptime=642 \
-  --filters="['F106', 'F129', 'F158']" \
-  --seed=42 \
-  --include_bkg=True \
-  --include_star=True \
-  --psf_fov_arcsec=10
+  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal' \
+  --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
+  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_10h_0deg.dat"
 ```
+
+For the sky around NGC 253:
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
+  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
+  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+```
+
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
+  --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
+  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+```
+
+If you wanna exclude large galaxies that have R_e > 0.15 arcsec by using `--exclude_size_thresh=0.15`,
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253_sizecut' \
+  --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
+  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" --exclude_size_thresh=0.15
+```
+
+
+For the sky around Cen A:
+```bash
+rosesim_sky \
+  --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
+  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
+  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+```
+
+```bash
+rosesim_sky \
+  --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
+  --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
+  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+```
+
 
 To generate an **empty sky** (for noise-only or background-free simulations):
 ```bash
 rosesim_sky \
-  --obs_ra=150.1049 \
-  --obs_dec=2.2741 \
-  --size=5001 \
-  --prefix='empty_sky' \
-  --exptime=642 \
-  --filters="['F106', 'F129', 'F158']" \
-  --seed=42 \
-  --include_bkg=False \
-  --include_star=False \
-  --psf_fov_arcsec=10
+  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky' --exptime=10272 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
 ```
 
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
@@ -161,6 +204,11 @@ The package relies on the following libraries:
 - `numpy`, `matplotlib`, `astropy`, `astroquery`
 - `artpop`, `asdf`, `astrocut`, `roman_datamodels`
 - `romanisim` (Modified version required: [GitHub](https://github.com/AstroJacobLi/romanisim))
+
+## DOLPHOT tests
+Have run DOLPHOT on the following combinations:
+- NGC253: 642s and 5136s
+- Cen A: 642s and 5136s
 
 ## Future Plans
 - [ ] Add stellar population info to ASDF `meta`.
