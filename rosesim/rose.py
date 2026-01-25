@@ -76,7 +76,7 @@ class RomanGalaxy(object):
     def observe(self, exptimes=642, rng_seed=0):
         _, psf = inject_sources_into_l3(self.dm, self.obj_cat, stpsf=True, 
                                exptimes=exptimes, seed=rng_seed)
-        self.dm.psf = psf.image.array
+        # self.dm.psf = psf.image.array
 
     def write_fits(self, output_filename, subtract_bkg=True):
         asdf_to_fits(self.dm, output_filename, subtract_bkg=subtract_bkg)
@@ -185,7 +185,19 @@ class RomanSky(object):
 
         self.star_cat = out
 
-    def gen_catalog(self, include_star=True, include_bkg=True):
+    def gen_catalog(self, include_star=True, include_bkg=True, exclude_size_thresh=None):
+        """
+        Generate the catalog for the observation.
+
+        Parameters
+        ----------
+        include_star : bool
+            Whether to include stars in the catalog.
+        include_bkg : bool
+            Whether to include background galaxies in the catalog.
+        exclude_size_thresh : float
+            Exclude galaxies that are LARGER than this threshold (in arcsec). To only show small objects. 
+        """
         self.roman_wcs = make_wcs(self.ra, self.dec, self.pa, self.xy_dim)
 
         if include_star:
@@ -223,12 +235,16 @@ class RomanSky(object):
             print('No sources to be included, so it will generate an empty sky.')
             full_table = self.bkg_cat[:0]
 
-        full_table.write(f'./temp/sky_table.ecsv', format='ascii.ecsv', overwrite=True)
+        if exclude_size_thresh is not None:
+            full_table = full_table[full_table['half_light_radius'] < exclude_size_thresh]
+            print(len(full_table), 'sources after excluding large galaxies.')
+
+        full_table.write(f'./temp/sky_table_{self.prefix}.ecsv', format='ascii.ecsv', overwrite=True)
         self.obj_cat = full_table
 
 
     def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, psf_fov_arcsec=5):
-        cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table.ecsv"
+        cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
 
         print(f'Making mock Roman L3 image in {band} for {self.prefix}')
         os.system(cmd)

@@ -68,5 +68,46 @@ JWST_zp_AB_Vega = {'F070W': 0.29540789653321275,
  'F460M': 3.3621645813926833,
  'F480M': 3.43507067599531}
 
+# PHOTMJSR is defined as the conversion bewteen MJy/SR and DN/s. See https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-absolute-flux-calibration-and-zeropoints#gsc.tab=0 for more details.
+# It is calculated using the following code: 
+# import romanisim
+# # to convert 1 MJy/sr to counts/s, we do:
+# readnoise = np.median(romanisim.parameters.reference_data['readnoise'])
+# gain = np.median(romanisim.parameters.reference_data['gain'])
+# tab = Table.read("/home/jiaxuanl/Research/Rosesim/data/Roman_zeropoints_20240301.ecsv", format="ascii.ecsv")
+# filters = np.unique(tab['element'])
+# PHOTMJSR_dict = {}
+# for filt in filters:
+#     PHOTMJSR = 1 / romanisim.bandpass.etomjysr(filt, sca=2) / gain.value * u.DN / u.s # This is 1 MJy/sr to DN/s
+#     PHOTMJSR_dict[str(filt)] = float(PHOTMJSR.value)
+#     print('PHOTMJSR =', PHOTMJSR)
+PHOTMJSR_dict = {"WFI02": 
+{'F062': 1.720502070483155,
+ 'F087': 1.2946502155083512,
+ 'F106': 1.3601100319840405,
+ 'F129': 1.3438455034692018,
+ 'F146': 4.2067149091975615,
+ 'F158': 1.3824504693471298,
+ 'F184': 0.9079436536627685,
+ 'F213': 0.8625534524346091}}
+
+
 from .utils import read_L3_asdf
 from .data import fetch_data
+
+
+### DOLPHOT and photometric uncertainty of simulated Roman images ###
+
+# Below are the completeness and photometric uncertainty for F106 and F158 at HLWAS depth
+# for high galactic latitude (e.g., NGC 253). For HLWAS depth, the completeness and photometric uncertainty are not sensitive to galactic latitude (e.g., NGC 253 vs CenA).
+hlwas_completeness_dict = {'F106': [26.8276654500533, 0.4966708077077806], 
+                           'F158': [26.472505389291722, 0.4872157948732412]} # HLWAS depth, sharp=0.03
+
+# hlwas_completeness_dict = {'F106': [27.008117636813505, 0.48107939790663157], 
+#                            'F158': [26.658101038219538, 0.47365521442219355]} # HLWAS depth, sharp=0.05
+
+hlwas_mag_uncertainty_dict = {'F106': [0.33745871, -9.60010621], 
+                              'F158': [0.33819561, -9.55362927]} # HLWAS depth, sharp=0.03
+
+# hlwas_mag_uncertainty_dict = {'F106': [0.33880419, -9.632484], 
+#                               'F158': [0.34034456, -9.60513677]} # HLWAS depth, sharp=0.05

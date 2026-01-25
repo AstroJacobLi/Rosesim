@@ -135,7 +135,7 @@ def make_jaguar_galaxies(coord,
     cat_area = 11 * 11 / 3600 # 11x11 arcmin area in square degrees
     
     # remove too faint galaxies
-    cat_all = cat_all[-2.5 * np.log10(cat_all['HST_F606W_fnu'] * 1e-9 / 3631) < 28] # remove sources with F606W flux < 0.1 nJy
+    cat_all = cat_all[-2.5 * np.log10(cat_all['NRC_F115W_fnu'] * 1e-9 / 3631) < 30] # remove sources with F115W flux < 0.1 nJy
     
     cos_density = len(cat_all) / cat_area # number of sources per square degree
 
@@ -375,3 +375,318 @@ def asdf_to_fits(dm, output_filename, subtract_bkg=True):
     print(f"Successfully wrote FITS file: {output_filename}")
     
     return None
+
+############### DOLPHOT #####################
+import re
+from pathlib import Path
+import romanisim
+import romanisim.bandpass
+import romanisim.parameters
+from astropy.coordinates import SkyCoord
+
+def _slug(s: str) -> str:
+    s = s.strip().lower()
+    s = re.sub(r"[^\w]+", "_", s)
+    s = re.sub(r"_+", "_", s).strip("_")
+    return s
+
+def _parse_imgid(imgid):
+    """
+    Parse a DOLPHOT ImageID like 'F158_642s' or 'F106_1200sec'.
+
+    Returns
+    -------
+    filt : str
+        Filter name (e.g. 'F158')
+    exptime : float or None
+        Exposure time in seconds
+    """
+    m = re.match(r"(?P<filt>[^_]+)(?:_(?P<t>\d+)(?:s|sec))?$", imgid)
+    if not m:
+        return imgid, None
+
+    filt = m.group("filt")
+    t = m.group("t")
+    return filt, (float(t) if t is not None else None)
+
+def _parse_dolphot_columns(columns_path, fake=False):
+    base = [
+        "ext", "chip", "x", "y", "chi", "snr", "sharp", "round",
+        "major_axis", "crowd", "obj_type", "pass_det",
+    ]
+
+    metric_map = {
+        "Measured counts": "counts",
+        "Measured sky level": "sky",
+        "Normalized count rate": "rate",
+        "Normalized count rate uncertainty": "rate_err",
+        "Instrumental VEGAMAG magnitude": "mag_vega",
+        "Transformed UBVRI magnitude": "mag_ubvri",
+        "Magnitude uncertainty": "mag_err",
+        "Chi": "chi",
+        "Signal-to-noise": "snr",
+        "Sharpness": "sharp",
+        "Roundness": "round",
+        "Crowding": "crowd",
+        "Photometry quality flag": "qflag",
+    }
+
+    names = []
+    filters = set()
+
+    for line in Path(columns_path).read_text().splitlines():
+        m = re.match(r"^\s*(\d+)\.\s*(.+?)\s*$", line)
+        if not m:
+            continue
+
+        idx = int(m.group(1))
+        desc = m.group(2)
+
+        if idx <= len(base):
+            names.append(base[idx - 1])
+            continue
+
+        # "<Metric>, <ImageID> (...)"
+        m2 = re.match(r"([^,]+),\s*([^\s(]+)", desc)
+        if m2:
+            metric, imgid = m2.group(1).strip(), m2.group(2).strip()
+            filt, exptime = _parse_imgid(imgid)
+            filters.add(filt)
+            short = metric_map.get(metric, _slug(metric))
+            name = f"{short}_{_slug(filt)}"
+        else:
+            name = _slug(desc)
+
+        names.append(name)
+
+    filters = sorted(filters, key=lambda f: int(f[1:]))
+
+    # ensure uniqueness
+    out, seen = [], {}
+    for n in names:
+        seen[n] = seen.get(n, 0) + 1
+        out.append(n if seen[n] == 1 else f"{n}_{seen[n]}")
+
+    if fake:
+        print('Filters:', filters)
+        temp = ['ext_ast', 'chip_ast', 'x_true', 'y_true']
+        for filt in filters:
+            temp += [f'counts_true_{filt.lower()}', f'mag_true_{filt.lower()}']
+        out = temp + out
+    
+    return out, sorted(filters), exptime
+
+def read_dolphot_cat(path, column_path, fake=False):
+    import romanisim
+    import romanisim.bandpass
+
+    names, filters, exptime = _parse_dolphot_columns(column_path, fake=fake)
+    print('Exptime:', exptime, 'Filters:', filters)
+
+    cat = Table.read(path, format='ascii.no_header', names=names)
+    cat.remove_columns([f'mag_ubvri_{filt.lower()}' for filt in filters])
+    cat.remove_columns([f'rate_{filt.lower()}' for filt in filters])
+    cat.remove_columns([f'rate_err_{filt.lower()}' for filt in filters])
+
+    for filt in filters:
+        maggytoes = romanisim.bandpass.get_abflux(filt, sca=cat['chip'][0] + 1)
+        cat[f'mag_vega_{filt.lower()}'] = -2.5 * np.log10(cat[f'counts_{filt.lower()}'] / exptime / maggytoes)
+        if fake:
+            cat[f'mag_true_{filt.lower()}'] = -2.5 * np.log10(cat[f'counts_true_{filt.lower()}'] / exptime / maggytoes)
+
+    cat.rename_columns([f'mag_vega_{filt.lower()}' for filt in filters], [f'mag_ab_{filt.lower()}' for filt in filters])
+
+    if fake:
+        for col in cat.colnames:
+            if cat[col].dtype.kind in "f":  # int or float
+                cat[col][cat[col] == 99.999] = np.nan
+                cat[col][cat[col] == 9.999] = np.nan
+                # cat[col][cat[col] == 0.0] = np.nan
+            
+    return cat
+
+
+def xmatch_true_meas(true_cat, cat, radius=0.4*u.arcsec,
+                     true_ra='ra', true_dec='dec',
+                     meas_ra='ra', meas_dec='dec',
+                     true_prefix='true_', meas_prefix='meas_',
+                     keep='all'):
+    """
+    Cross-match measured catalog 'cat' to truth 'true_cat' within 'radius'. This is used to test how much of the sources from Rosesim are detected by Dolphot, for QA purposes.
+
+    keep:
+      - 'all'   : keep all matches (many measured can map to same true)
+      - 'best'  : keep at most one measured per true (smallest separation)
+    """
+    c_true = SkyCoord(true_cat[true_ra], true_cat[true_dec], unit='deg')
+    c_meas = SkyCoord(cat[meas_ra], cat[meas_dec], unit='deg')
+
+    # For each measured source, find nearest truth source
+    idx_true, d2d, _ = c_meas.match_to_catalog_sky(c_true)
+
+    m = d2d < radius
+    meas_m = cat[m]
+    true_m = true_cat[idx_true[m]]
+    sep_m  = d2d[m]
+
+    if keep == 'best':
+        # enforce one-to-one on the truth side: keep the closest measured per true
+        order = np.argsort(sep_m)  # closest first
+        true_ids = idx_true[m][order]
+        _, first = np.unique(true_ids, return_index=True)
+        keep_idx = order[first]
+
+        meas_m = meas_m[keep_idx]
+        true_m = true_m[keep_idx]
+        sep_m  = sep_m[keep_idx]
+
+    # rename to avoid column collisions, then merge side-by-side
+    meas_m = meas_m.copy()
+    true_m = true_m.copy()
+    meas_m.rename_columns(meas_m.colnames, [meas_prefix + c for c in meas_m.colnames])
+    true_m.rename_columns(true_m.colnames, [true_prefix + c for c in true_m.colnames])
+
+    out = hstack([meas_m, true_m], join_type='exact')
+    out['sep_arcsec'] = sep_m.to_value(u.arcsec)
+
+    return out, meas_m, true_m
+
+### DOLPHOT photometric uncertainty and completeness analysis ###
+from scipy.optimize import curve_fit
+from astropy.stats import sigma_clip
+
+def logistic_completeness(m, m50, w):
+    return 1.0 / (1.0 + np.exp((m - m50) / w))
+
+def mag_uncertainty_func(m, slope, intercept):
+    return 10**(m * slope + intercept)
+
+def fit_logistic_completeness(mag, comp):
+    """
+    Fit a logistic completeness function.
+
+    Returns
+    -------
+    popt : (m50, w)
+    pcov : covariance matrix
+    """
+    mag = np.asarray(mag)
+    comp = np.asarray(comp)
+
+    # Use only valid bins
+    ok = np.isfinite(mag) & np.isfinite(comp) & (comp > 0) & (comp < 1)
+    mag = mag[ok]
+    comp = comp[ok]
+
+    # Initial guesses:
+    m50_init = np.interp(0.5, comp[::-1], mag[::-1])  # rough 50% estimate
+    w_init = 0.3                                      # typical transition width
+
+    popt, pcov = curve_fit(
+        logistic_completeness,
+        mag, comp,
+        p0=[m50_init, w_init],
+        bounds=([mag.min(), 0.01], [mag.max(), 5.0]),
+    )
+    return popt, pcov
+
+def delta_m_scatter_vs_mag(
+    mag_in,
+    delta_m,
+    *,
+    mag_bins,
+    clip_sigma=3.0,
+    clip_iters=3,
+    method="mad",
+    min_per_bin=10,
+):
+    """
+    Compute sigma-clipped scatter of delta_m as a function of mag_in.
+
+    Parameters
+    ----------
+    mag_in : array-like
+        Input magnitudes.
+    delta_m : array-like
+        delta_m = mag_in - mag_out (or vice versa; sign does not matter for scatter).
+    mag_bins : array-like
+        Magnitude bin edges.
+    clip_sigma : float
+        Sigma threshold for sigma clipping.
+    clip_iters : int
+        Number of sigma-clipping iterations.
+    method : {'mad','rms'}
+        Scatter estimator.
+    min_per_bin : int
+        Minimum number of points required to compute scatter.
+
+    Returns
+    -------
+    tab : astropy.table.Table
+        Columns:
+          mag_center, n_used, dmag_med, scatter
+    """
+    mag_in = np.asarray(mag_in)
+    delta_m = np.asarray(delta_m)
+
+    idx = np.digitize(mag_in, mag_bins) - 1
+
+    out = Table()
+    out["mag_center"] = 0.5 * (mag_bins[:-1] + mag_bins[1:])
+    out["n_used"] = np.zeros(len(out), dtype=int)
+    out["dmag_med"] = np.nan
+    out["scatter"] = np.nan
+
+    for i in range(len(out)):
+        m = (idx == i) & np.isfinite(delta_m)
+        if np.sum(m) < min_per_bin:
+            continue
+
+        dm = delta_m[m]
+
+        # iterative sigma clipping
+        clipped = sigma_clip(
+            dm,
+            sigma=clip_sigma,
+            maxiters=clip_iters,
+            cenfunc="median",
+            stdfunc="std",
+        )
+
+        dm_clipped = dm[~clipped.mask]
+        if len(dm_clipped) < min_per_bin:
+            continue
+
+        out["n_used"][i] = len(dm_clipped)
+        out["dmag_med"][i] = np.median(dm_clipped)
+
+        if method == "mad":
+            out["scatter"][i] = (
+                1.4826 * np.median(np.abs(dm_clipped - np.median(dm_clipped)))
+            )
+        elif method == "rms":
+            out["scatter"][i] = np.sqrt(np.mean((dm_clipped - np.mean(dm_clipped))**2))
+        else:
+            raise ValueError("method must be 'mad' or 'rms'")
+
+    return out
+
+
+def quality_cut(cat, snr=5, crowd={'f158': 0.5, 'f106': 0.5}, sharp={'f158': 0.03, 'f106': 0.03}):
+    flag = cat['snr_f158'] > snr
+    flag &= cat['snr_f106'] > snr
+    flag &= (cat['crowd_f106'] < crowd['f106'])
+    flag &= (cat['crowd_f158'] < crowd['f158'])
+    flag &= (cat['qflag_f158'] <= 4)
+    flag &= (cat['qflag_f106'] <= 4)
+    flag &= (cat['obj_type'] <= 2)
+    flag &= (cat['pass_det'] < 3)
+    return flag
+
+def point_source_cut(cat, snr=5, crowd={'f158': 0.5, 'f106': 0.5}, sharp={'f158': 0.03, 'f106': 0.03}):
+    flag = quality_cut(cat, snr=snr, crowd=crowd, sharp=sharp)
+    flag &= (cat['sharp_f106']**2 < sharp['f106'])
+    flag &= (cat['sharp_f158']**2 < sharp['f158'])
+    flag &= (cat['chi_f106'] < 3)
+    flag &= (cat['chi_f158'] < 3)
+    return flag

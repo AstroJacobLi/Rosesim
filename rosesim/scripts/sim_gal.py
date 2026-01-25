@@ -64,7 +64,7 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
                   'r_eff': 10**rosesim.mass_size_carlsten(log_m_star) / 1000 * u.kpc,
                   'distance': distance * u.Mpc}
 
-    gal = RomanGalaxy(prefix=f'dw_1e{log_m_star:.1f}_{int(gal_kwargs["distance"].to(u.Mpc).value)}Mpc_age{np.log10(gal_kwargs["age"].value):.1f}_feh{gal_kwargs["feh"]:.1f}', data_dir=DATA_PATH)
+    gal = RomanGalaxy(prefix=f'dw_1e{log_m_star:.1f}_{gal_kwargs["distance"].to(u.Mpc).value:.1f}Mpc_age{np.log10(gal_kwargs["age"].value):.1f}_feh{gal_kwargs["feh"]:.1f}', data_dir=DATA_PATH)
 
     print(f'Simulating galaxy {gal.prefix}')
 

@@ -1,0 +1,89 @@
+Nimg = 2                #number of images (int)
+# img0_file = ref
+img1_file = F106_642s
+img2_file = F158_642s
+img_shift = 0 0         #shift relative to reference
+img_xform = 1 0 0       #scale, distortion, and rotation
+img_PSFa = 3 0 0 0 0 0  #PSF XX term (flt)
+img_PSFb = 3 0 0 0 0 0  #PSF YY term (flt)
+img_PSFc = 0 0 0 0 0 0  #PSF XY term (flt)
+img_RAper = 3          #photometry apeture size (flt)
+img_RChi = 2           #Aperture for determining centroiding (flt); if <=0 use RAper
+img_RSky = 5 10         #radii defining sky annulus (flt>=RAper+0.5)
+img_RPSF = 25           #PSF size (int>0)
+img_aprad = 20          #radius for aperture correction
+img_apsky = 30 50       #sky annulus for aperture correction
+#
+# The following photometers affect the finding and measurement of stars
+photsec =               #section: group, chip, (X,Y)0, (X,Y)1
+RCentroid = 1           #centroid box size (int>0)
+SigFind = 4          #sigma detection threshold (flt)
+SigFindMult = 0.85      #Multiple for quick-and-dirty photometry (flt>0)
+SigFinal = 4.5            #sigma output threshold (flt)
+MaxIT = 25              #maximum iterations (int>0)
+FPSF = G+L              #PSF function (str/Gauss,Lorentz,Lorentz^2,G+L)
+PSFPhot = 1             #photometry type (int/0=aper,1=psf,2=wtd-psf)
+PSFPhotIt = 2           #number of iterations in PSF-fitting photometry (int>=0)
+FitSky = 1              #fit sky? (int/0=no,1=yes,2=small,3=with-phot)
+SkipSky = 1             #spacing for sky measurement (int>0)
+SkySig = 2.25           #sigma clipping for sky (flt>=1)
+NegSky = 0              #allow negative sky values? (0=no,1=yes)
+NoiseMult = 0.05        #noise multiple in imgadd (flt)
+FSat = 0.5              #fraction of saturate limit (flt)
+Zero = 25.0             #zeropoint for 1 DN/s (flt)
+PosStep = 0.25          #search step for position iterations (flt)
+dPosMax = 3.0           #maximum single-step in position iterations (flt)
+RCombine = 1.5          #minimum separation for two stars for cleaning (flt)
+SigPSF = 10              #min S/N for psf parameter fits (flt)
+PSFStep = 0.25          #stepsize for PSF
+MinS = 0.3              #minimum FWHM for good star (flt)
+MaxS = 5.0              #maximum FWHM for good star (flt)
+MaxE = 0.5              #maximum ellipticity for good star (flt)
+#
+# Settings to enable/disable features
+UseWCS = 2              #use WCS info in alignment (int 0=no, 1=shift/rotate/scale, 2=full)
+Align = 0               #align images? (int 0=no,1=const,2=lin,3=cube)
+AlignIter = 1           #number of iterations on alignment? (int>0)
+AlignTol = 0            #number of pixels to search in preliminary alignment (flt>=0)
+AlignStep = 1           #stepsize for preliminary alignment search (flt>0)
+AlignOnly = 0           #exit after alignment
+Rotate = 1              #allow cross terms in alignment? (int 0=no, 1=yes)
+SubResRef = 1           #subpixel resolution for reference image (int>0)
+SecondPass = 0          #second pass finding stars (int 0=no,1=yes)
+SearchMode = 1          #algorithm for astrometry (0=max SNR/chi, 1=max SNR)
+Force1 = 0              #force type 1/2 (stars)? (int 0=no,1=yes)
+EPSF = 1                #allow elliptical PSFs in parameter fits (int 0=no,1=yes)
+PSFsol = 1              #Analytic PSF solution (int -1=none, 0=con, 1=lin, 2=quad)
+PSFres = 1              #make PSF residual image? (int 0=no,1=yes)
+psfstars =              #Coordinates of PSF stars
+psfoff = 0.0            #coordinate offset (PSF system - dolphot system)
+ApCor = 1               #find/make aperture corrections? (int 0=no,1=yes)
+SubPixel = 4            #subpixel PSF calculation (int>0)
+FakeStars = fake_642s.inputlist            #file with fake star input data
+FakeOut = fake_642s.fake              #file with fake star output data (default=phot.fake)
+FakeMatch = 3.0         #maximum separation between input and recovered star (flt>0)
+FakePSF = 2.0           #assumed PSF FWHM for fake star matching
+FakeStarPSF = 1         #use PSF residuals in fake star tests? (int 0=no,1=yes)
+RandomFake = 1          #apply Poisson noise to fake stars? (int 0=no,1=yes)
+FakePad = 0             #minimum distance of fake star from any chip edge to be used
+UsePhot =               #if defined, use alignment, PSF, and aperture corr from photometry
+DiagPlotType =          #format to generate diagnostic plots (PNG, GIF, PS)
+xytfile =               #position file for warmstart (str)
+xytpsf =                #reference PSF for image subtraction
+VerboseData = 0         #to write all displayed numbers to a .data file
+#
+# Flags for HST modes
+ForceSameMag = 0        #force same count rate in images with same filter? (int 0=no, 1=yes)
+FlagMask = 4            #photometry quality flags to reject when combining magnitudes
+CombineChi = 0          #combined magnitude weights uses chi? (int 0=no, 1=yes)
+WFPC2useCTE = 1         #apply CTE corrections on WFPC2 data? (int 0=no, 1=yes)
+ACSuseCTE = 1           #apply CTE corrections on ACS data? (int 0=no, 1=yes)
+WFC3useCTE = 1          #apply CTE corrections on WFC3 data? (int 0=no, 1=yes)
+ACSpsfType = 0          #use Anderson PSF cores? (int 0=no, 1=yes)
+WFC3UVISpsfType = 0     #use Anderson PSF cores? (int 0=no, 1=yes)
+WFC3IRpsfType = 0       #use Anderson PSF cores? (int 0=no, 1=yes)
+InterpPSFlib = 1        #interpolate PSF library spatially
+#
+# Other flags not recommended for most users
+#img_ref2img =          #high order terms for conversion between image (distortion-corrected
+                        #if HST) and reference
