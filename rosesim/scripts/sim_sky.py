@@ -11,14 +11,14 @@ from rosesim.rose import RomanGalaxy, RomanSky
 from rosesim import DATA_PATH, pixel_scale
 
 
-def simulate_sky(obs_ra=150.1049, obs_dec=2.2741, size=5001, prefix='sky_jaguar', exptime=642, nexp=6, filters=['F106', 'F129', 'F158'], seed=42, include_bkg=True, include_star=True, exclude_size_thresh=None, trilegal_file="trilegal_Roman_30mag_10h_0deg.dat", psf_fov_arcsec=10):
+def simulate_sky(obs_ra=150.1049, obs_dec=2.2741, size=5001, prefix='sky_jaguar', exptime=642, nexp=6, filters=['F106', 'F129', 'F158'], seed=42, include_bkg=True, include_star=True, exclude_size_thresh=None, trilegal_file="trilegal_Roman_30mag_10h_0deg.dat", fastpointsources=True, psftype='galsim'):
     """
     Simulate an mock Roman image for the background sky.
 
     Parameters
     ----------
     obs_ra : float
-        The right ascension of the observation center (degrees).
+        The right ascension of the observation cent`er (degrees).
     obs_dec : float
         The declination of the observation center (degrees).
     size : int
@@ -51,7 +51,7 @@ def simulate_sky(obs_ra=150.1049, obs_dec=2.2741, size=5001, prefix='sky_jaguar'
     sky.gen_catalog(include_bkg=include_bkg, include_star=include_star, exclude_size_thresh=exclude_size_thresh)
 
     for filt in filters:
-        sky.observe(filt, exptime=exptime, nexp=nexp, psf_fov_arcsec=psf_fov_arcsec)
+        sky.observe(filt, exptime=exptime, nexp=nexp, fastpointsources=fastpointsources, psftype=psftype)
 
 def main():
     import fire

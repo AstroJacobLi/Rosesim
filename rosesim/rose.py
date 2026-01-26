@@ -73,9 +73,14 @@ class RomanGalaxy(object):
         self.obj_cat = full_table
         print('Catalogue generated.')
 
-    def observe(self, exptimes=642, rng_seed=0):
-        _, psf = inject_sources_into_l3(self.dm, self.obj_cat, stpsf=True, 
-                               exptimes=exptimes, seed=rng_seed)
+    def observe(self, exptimes=642, psftype='galsim', rng_seed=0, fastpointsources=True):
+        """
+        For simulating the background sky image, because there will be bright MW stars, we recommend using `psftype='galsim'` because its bounding box is large enough to include enough amount of light. Using `psftype='epsf'` will make very bright stars look like a small block in the final image. For fainter sources, it is typically okay and much faster to use `psftype='epsf'`.
+        """
+        res_model = inject_sources_into_l3(self.dm, self.obj_cat, psftype=psftype, 
+                               exptimes=exptimes, seed=rng_seed, 
+                               fastpointsources=fastpointsources)
+        self.dm = res_model
         # self.dm.psf = psf.image.array
 
     def write_fits(self, output_filename, subtract_bkg=True):
@@ -243,8 +248,11 @@ class RomanSky(object):
         self.obj_cat = full_table
 
 
-    def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, psf_fov_arcsec=5):
-        cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
-
+    def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, fastpointsources=False, psftype='galsim'):
+        if fastpointsources:
+            extra_args = '--fastpointsources'
+        else:
+            extra_args = ''
+        cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --psftype {psftype} {extra_args} --date {self.obs_time.isot} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
         print(f'Making mock Roman L3 image in {band} for {self.prefix}')
         os.system(cmd)

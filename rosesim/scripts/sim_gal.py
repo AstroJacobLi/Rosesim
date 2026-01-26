@@ -16,7 +16,7 @@ from rosesim import DATA_PATH, pixel_scale
 def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30, 
                log_age=9.0, feh=-1.5, abs_mag_lim=0, filters=['F129', 'F158', 'F106'], exptime=642, 
                n=0.8, theta=100, ellip=0.3,
-               sky_model=DATA_PATH + "sky_jaguar_trilegal/"):
+               sky_model=DATA_PATH + "sky_jaguar_trilegal/", psftype='galsim', fastpointsources=True):
     """
     Simulate a mock galaxy and inject it into a background image.
 
@@ -48,6 +48,10 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
         The ellipticity, defined as 1 - b/a.
     sky_model : str
         The path to the sky model.
+    psftype : str
+        The type of PSF to use for point sources. If stars are not bright, `psftype='epsf'` is typically okay and much faster. If stars are bright, `psftype='galsim'` is recommended.
+    fastpointsources : bool
+        Whether to use fast point sources.
     """
     # some checks
     available_filters = ['F106', 'F129', 'F158']
@@ -107,7 +111,7 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
     
     for filt in filters:
         gal.load_bkg(filt, os.path.join(sky_model, f'{filt}_{exptime}s.asdf'))
-        gal.observe(exptimes=exptime)
+        gal.observe(exptimes=exptime, psftype=psftype, fastpointsources=fastpointsources)
         gal.dm.save(f'./{filt}_{exptime}s.asdf')
 
     print(f'Done observing for {gal.prefix}')
@@ -117,7 +121,7 @@ def main():
     import fire
     fire.Fire(simulate_galaxy)
 
-# python sim_gal.py --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642
+# python sim_gal.py --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642 --psftype='galsim' --fastpointsources=True
 
 # rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642
 

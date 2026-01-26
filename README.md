@@ -32,6 +32,12 @@ cd Rosesim
 pip install -e .
 ```
 
+When installing `romanisim`, you have to set the following for the CRDS cache:
+```bash
+export CRDS_PATH="$gpfs/Data/temp/crds_cache" # or any other directory
+export CRDS_SERVER_URL="https://roman-crds.stsci.edu"
+```
+
 ### 2. Set Up Environment Variables
 **Rosesim** requires a dedicated data directory to store large files (e.g., isochrones, sky models). 
 
@@ -93,6 +99,9 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 
 **Rosesim** provides command-line scripts for common simulation tasks. The scripts are located in `rosesim/scripts/`.
 
+We strongly encourage to use `psftype='galsim'` for simulating bright stars, as its PSF box is larger. 
+For dwarf galaxies, it might be better to use `psftype='epsf'` and `fastpointsources=True`.
+
 #### 1. Simulate a Sky Model
 Generate a full sky model including background galaxies and Milky Way stars:
 ```bash
@@ -131,7 +140,7 @@ For the sky around Cen A:
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
 ```bash
