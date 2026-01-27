@@ -256,3 +256,78 @@ class RomanSky(object):
         cmd = f"/home/jiaxuanl/Research/Packages/romanisim/scripts/romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --psftype {psftype} {extra_args} --date {self.obs_time.isot} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
         print(f'Making mock Roman L3 image in {band} for {self.prefix}')
         os.system(cmd)
+
+class RomanSymphony(object):
+    """
+    A class for simulating stars and stellar streams in the Symphony simulation.
+    """
+    def __init__(self, prefix='symphony_pid24', data_dir=DATA_PATH):
+        if not os.path.isdir(os.path.join(data_dir, prefix)):
+            os.makedirs(os.path.join(data_dir, prefix))
+        os.chdir(os.path.join(data_dir, prefix))
+        if not os.path.isdir('temp'):
+            os.makedirs('temp')
+        self.prefix = prefix
+    
+    def load_src(self, src, ra=180., dec=0., pa=0.):
+        self.src = src
+        self.ra = ra
+        self.dec = dec
+        self.pa = pa # placeholder for now
+        import re
+        self.filters = [re.search(r'abs_(F\d+)mag', c).group(1) for c in src.colnames if re.search(r'abs_(F\d+)mag', c)]
+        # self.xy_dim = src.xy_dim 
+
+    def load_bkg(self, band, bkg_file):
+        sky_dm = read_L3_asdf(bkg_file)
+        if band != sky_dm.meta.instrument.optical_element:
+            raise ValueError(f"Band {band} does not match the band in the background file {sky_dm.meta.instrument.optical_element}.")
+        
+        self.sky_dm = sky_dm
+        self.dm = sky_dm.copy()
+        print(f'Loaded background from {bkg_file}')
+        
+    def gen_catalog(self):
+        # check if src is loaded
+        if not hasattr(self, 'src'):
+            raise ValueError("Source not loaded. Please load a source using load_src() method.")
+        self.roman_wcs = make_wcs(self.ra, self.dec, self.pa, self.src.xy_dim)
+        
+        # In Romanisim, the catalog brightnesses are specified in units of maggies, 
+        # which are defined such that one maggie is equal to the reference AB magnitude flux (3,631 Jy), 
+        # i.e., maggies = 10^(-0.4 * m_AB).
+        mag_table = self.src.copy()
+        mag_table.rename_columns(mag_table.colnames, ['F' + name[1:] for name in mag_table.colnames])
+        for filt in mag_table.colnames:
+            mag_table[filt] = 10**(-0.4 * mag_table[filt])
+        pts_table = create_point_source_catalogue(self.roman_wcs, self.src.x, self.src.y, mag_table)
+        if len(pts_table) == 0:
+            print("No point sources found in the source catalog.")
+        else:
+            pts_table.write(f'./temp/pts_table.ecsv', format='ascii.ecsv', overwrite=True)
+        
+        full_table = gal_table.copy()
+        if len(pts_table) != 0:
+            full_table = vstack([full_table, pts_table])
+
+        full_table.write(f'./temp/full_table.ecsv', format='ascii.ecsv', overwrite=True)
+        self.obj_cat = full_table
+        print('Catalogue generated.')
+
+    def observe(self, exptimes=642, psftype='galsim', rng_seed=0, fastpointsources=True):
+        """
+        For simulating the background sky image, because there will be bright MW stars, we recommend using `psftype='galsim'` because its bounding box is large enough to include enough amount of light. Using `psftype='epsf'` will make very bright stars look like a small block in the final image. For fainter sources, it is typically okay and much faster to use `psftype='epsf'`.
+        """
+        self.dm = self.sky_dm.copy()
+        res_model = inject_sources_into_l3(self.dm, self.obj_cat, psftype=psftype, 
+                               exptimes=exptimes, seed=rng_seed, 
+                               fastpointsources=fastpointsources)
+        self.dm = res_model
+
+    def write_fits(self, output_filename, subtract_bkg=True):
+        asdf_to_fits(self.dm, output_filename, subtract_bkg=subtract_bkg)
+        print(f'Wrote FITS file to {output_filename}')
+
+    def write_asdf(self, output_filename):
+        self.dm.write_to(output_filename)
+        print(f'Wrote ASDF file to {output_filename}')
