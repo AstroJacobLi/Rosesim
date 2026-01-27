@@ -11,7 +11,7 @@ setup(
         'matplotlib',
         'astropy',
         'astroquery',
-        'artpop',
+        'artpop @ git+ssh://git@github.com:AstroJacobLi/ArtPop.git',
         'asdf',
         'astrocut',
         'bs4',
