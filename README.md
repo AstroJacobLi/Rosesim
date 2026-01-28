@@ -93,6 +93,9 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 > [!CAUTION]
 > JAGUAR fluxes are currently based on JWST filters, and are converted to Roman filters using simple stellar population models. Also the background galaxies do not have any spatial clustering.
 
+> [!NOTE]
+> A quick note on the PSF. Romanisim now takes `psftype` as an argument, which can be either `galsim`, `epsf`, or `stpsf`. If your star is bright, we recommend using `psftype='galsim'` as its PSF box is large enough to cover the PSF wings and spikes far enough. Turning on `fastpointsources=True` will speed up the simulation, without compromising the PSF quality. For faint stars, we recommend using `psftype='epsf'` and `fastpointsources=True`, as it is much faster. 
+
 ## Usage
 
 ### Command Line Interface
@@ -103,27 +106,36 @@ We strongly encourage to use `psftype='galsim'` for simulating bright stars, as 
 For dwarf galaxies, it might be better to use `psftype='epsf'` and `fastpointsources=True`.
 
 #### 1. Simulate a Sky Model
-Generate a full sky model including background galaxies and Milky Way stars:
-```bash
+
+<!-- ```bash
 rosesim_sky \
   --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal' \
   --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
   --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_10h_0deg.dat"
+``` -->
+
+To generate an **empty sky** (for noise-only or background-free simulations):
+```bash
+rosesim_sky \
+  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky' --exptime=10272 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
 ```
 
-For the sky around NGC 253:
+
+Generate a full sky model including background galaxies and Milky Way stars, e.g., for the sky around NGC 253:
 ```bash
 rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
+
+This corresponds to the default HLWAS depth (2 pointings, 3 dithers per pointing, and each exposure takes 107s). If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
 
 ```bash
 rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
 ```
 
 If you wanna exclude large galaxies that have R_e > 0.15 arcsec by using `--exclude_size_thresh=0.15`,
@@ -131,7 +143,7 @@ If you wanna exclude large galaxies that have R_e > 0.15 arcsec by using `--excl
 rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253_sizecut' \
   --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" --exclude_size_thresh=0.15
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" --exclude_size_thresh=0.15
 ```
 
 
@@ -143,19 +155,14 @@ rosesim_sky \
   --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
+If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
 ```bash
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
-
-To generate an **empty sky** (for noise-only or background-free simulations):
-```bash
-rosesim_sky \
-  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky' --exptime=10272 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
-```
 
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
 
