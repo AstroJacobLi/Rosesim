@@ -58,6 +58,8 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
     if feh == None:
         feh = rosesim.mass_feh_kirby(log_m_star)
 
+    log_age = float(log_age)
+    feh = float(feh)
     gal_kwargs = {'age': 10**log_age * u.yr,
                   'feh': feh,
                   'total_mass': 10**log_m_star,
@@ -117,8 +119,6 @@ def main():
     import fire
     fire.Fire(simulate_galaxy)
 
-# python sim_gal.py --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642
+# rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --log_age=1.0 --log_m_star=4 --exptime=642
 
-# rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642
-
-# rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=1 --age=6.0 --log_m_star=4 --exptime=642 --abs_mag_lim=0
+# rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=1 --log_age=6.0 --log_m_star=4 --exptime=642 --abs_mag_lim=0

@@ -153,15 +153,9 @@ Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook
 #### 2. Simulate a Single Dwarf Galaxy
 Inject a specific dwarf galaxy into a simulation:
 ```bash
-rosesim_gal \
-  --obs_ra=150.1049 \
-  --obs_dec=2.2741 \
-  --distance=5 \
-  --age=1.0 \
-  --log_m_star=4 \
-  --exptime=642 \
-  --sky_model=DATA_PATH + "/sky_jaguar_trilegal/"
+rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --log_age=9.0 --log_m_star=4 --exptime=642 --sky_model=$ROSESIM_DATA_PATH/empty_sky/
 ```
+You don't need to specify the number of exposures because that is already encoded in the sky model. Make sure that your input RA, Dec matches the sky model.
 
 A full list of options for simulating the dwarf galaxy is as follows:
 ```python
@@ -170,7 +164,7 @@ simulate_galaxy(
     obs_dec=2.2741,
     log_m_star=6,
     distance=30,
-    age=5,
+    log_age=9.0,
     feh=-1.5,
     abs_mag_lim=-1,
     filters=["F129", "F158", "F106"],

@@ -12,6 +12,8 @@ BASE_URL = "https://tigress-web.princeton.edu/~jiaxuanl/Rosesim/"
 DIRS = [
     "PARSEC",
     "TRILEGAL",
+    "JAGUAR",
+    "empty_sky",
     "sky_jaguar_trilegal",
 ]
 
