@@ -17,6 +17,7 @@ setup(
         'bs4',
         'requests',
         'tqdm',
+        'fire',
         'roman_datamodels',
         'romanisim @ git+https://github.com/AstroJacobLi/romanisim.git',
     ],
