@@ -145,7 +145,7 @@ rosesim_sky \
 To generate an **empty sky** (for noise-only or background-free simulations):
 ```bash
 rosesim_sky \
-  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky' --exptime=10272 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
+  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
 ```
 
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
