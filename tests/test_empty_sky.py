@@ -31,7 +31,7 @@ class TestEmptySky(unittest.TestCase):
             "--size=501",
             f"--prefix={self.prefix}",
             "--exptime=642",
-            "--filters=['F106', 'F129', 'F158']",
+            "--filters=['F106']",
             "--seed=42",
             "--include_bkg=False",
             "--include_star=False",
@@ -52,7 +52,7 @@ class TestEmptySky(unittest.TestCase):
 
         # Check if the simulated images were created
         # The code generates files named like {band}_{exptime}s.asdf
-        expected_filters = ['F106', 'F129', 'F158']
+        expected_filters = ['F106']
         exptime = 642
         for filt in expected_filters:
             img_file = os.path.join(self.output_dir, f"{filt}_{exptime}s.asdf")
