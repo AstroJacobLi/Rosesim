@@ -94,35 +94,19 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 **Rosesim** provides command-line scripts for common simulation tasks. The scripts are located in `rosesim/scripts/`.
 
 #### 1. Simulate a Sky Model
+To generate an **empty sky** (for noise-only or background-free simulations):
+```bash
+rosesim_sky \
+  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
+```
+
+
 Generate a full sky model including background galaxies and Milky Way stars:
 ```bash
 rosesim_sky \
   --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal' \
   --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
   --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_10h_0deg.dat"
-```
-
-For the sky around NGC 253:
-```bash
-rosesim_sky \
-  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
-  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
-```
-
-```bash
-rosesim_sky \
-  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
-  --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
-```
-
-If you wanna exclude large galaxies that have R_e > 0.15 arcsec by using `--exclude_size_thresh=0.15`,
-```bash
-rosesim_sky \
-  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253_sizecut' \
-  --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" --exclude_size_thresh=0.15
 ```
 
 
@@ -134,6 +118,7 @@ rosesim_sky \
   --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
+8 times more exposure time:
 ```bash
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
@@ -141,21 +126,14 @@ rosesim_sky \
   --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
-
-To generate an **empty sky** (for noise-only or background-free simulations):
-```bash
-rosesim_sky \
-  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
-```
-
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
 
 #### 2. Simulate a Single Dwarf Galaxy
-Inject a specific dwarf galaxy into a simulation:
+Inject a specific dwarf galaxy into an empty sky model:
 ```bash
 rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --log_age=9.0 --log_m_star=4 --exptime=642 --sky_model=$ROSESIM_DATA_PATH/empty_sky/
 ```
-You don't need to specify the number of exposures because that is already encoded in the sky model. Make sure that your input RA, Dec matches the sky model.
+You don't need to specify the number of exposures because that is already encoded in the sky model. Make sure that your input RA, Dec matches the sky model. See `rosesim_gal --help` for more options.
 
 A full list of options for simulating the dwarf galaxy is as follows:
 ```python
@@ -176,7 +154,7 @@ simulate_galaxy(
 )
 ```
 
-Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc.
+Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc. Currently the size is fixed to follow the average mass-size relation in Carlsten+21. 
 
 ### Python API
 
@@ -191,6 +169,7 @@ sky_dm = rosesim.read_L3_asdf('./F158_642s.asdf')
 
 # Convert to FITS for inspection (e.g., with DS9)
 rosesim.asdf_to_fits(sky_dm, 'F158_642s.fits', subtract_bkg=True)
+# This also subtracts the median background level from the image
 ```
 
 ## Requirements
@@ -199,10 +178,6 @@ The package relies on the following libraries:
 - `artpop`, `asdf`, `astrocut`, `roman_datamodels`
 - `romanisim` (Modified version required: [GitHub](https://github.com/AstroJacobLi/romanisim))
 
-## DOLPHOT tests
-Have run DOLPHOT on the following combinations:
-- NGC253: 642s and 5136s
-- Cen A: 642s and 5136s
 
 ## Future Plans
 - [ ] Add stellar population info to ASDF `meta`.

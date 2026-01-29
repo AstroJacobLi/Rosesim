@@ -27,6 +27,5 @@ setup(
             'rosesim_gal=rosesim.scripts.sim_gal:main',
         ]
     },
-    python_requires='>=3.7',
-    test_suite='tests',
+    python_requires='>=3.7'
 )
