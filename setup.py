@@ -18,6 +18,7 @@ setup(
         'requests',
         'tqdm',
         'fire',
+        'sep',
         'roman_datamodels',
         'romanisim @ git+https://github.com/AstroJacobLi/romanisim.git',
     ],
