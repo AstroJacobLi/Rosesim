@@ -11,14 +11,16 @@ setup(
         'matplotlib',
         'astropy',
         'astroquery',
-        'artpop',
+        'artpop @ git+https://github.com/AstroJacobLi/ArtPop.git',
         'asdf',
         'astrocut',
         'bs4',
         'requests',
         'tqdm',
+        'fire',
+        'sep',
         'roman_datamodels',
-        'romanisim @ git+ssh://git@github.com/AstroJacobLi/romanisim.git',
+        'romanisim @ git+https://github.com/AstroJacobLi/romanisim.git',
     ],
     entry_points={
         'console_scripts': [
@@ -26,5 +28,5 @@ setup(
             'rosesim_gal=rosesim.scripts.sim_gal:main',
         ]
     },
-    python_requires='>=3.7',
+    python_requires='>=3.7'
 )
