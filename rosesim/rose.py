@@ -248,18 +248,12 @@ class RomanSky(object):
         self.obj_cat = full_table
 
 
-<<<<<<< HEAD
-    def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, psf_fov_arcsec=5):
-        cmd = f"romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --date {self.obs_time.isot} --psf_fov_arcsec {psf_fov_arcsec} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
-
-=======
     def observe(self, band='F158', exptime=642, nexp=6, rng_seed=0, fastpointsources=False, psftype='galsim'):
         if fastpointsources:
             extra_args = '--fastpointsources'
         else:
             extra_args = ''
         cmd = f"romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --psftype {psftype} {extra_args} --date {self.obs_time.isot} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
->>>>>>> update_rosesim
         print(f'Making mock Roman L3 image in {band} for {self.prefix}')
         os.system(cmd)
 

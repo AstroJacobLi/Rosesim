@@ -18,7 +18,7 @@ def simulate_sky(obs_ra=150.1049, obs_dec=2.2741, size=5001, prefix='sky_jaguar'
     Parameters
     ----------
     obs_ra : float
-        The right ascension of the observation cent`er (degrees).
+        The right ascension of the observation center (degrees).
     obs_dec : float
         The declination of the observation center (degrees).
     size : int
