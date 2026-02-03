@@ -37,6 +37,12 @@ When installing `romanisim`, you have to set the following for the CRDS cache:
 export CRDS_PATH="$gpfs/Data/temp/crds_cache" # or any other directory
 export CRDS_SERVER_URL="https://roman-crds.stsci.edu"
 ```
+
+To run the unit tests to make sure everything is installed correctly, run the following command under the root directory of the repository:
+```bash
+pytest
+```
+
 > [!CAUTION]
 > The customized [`romanisim`](https://github.com/AstroJacobLi/romanisim) and [`artpop`](https://github.com/AstroJacobLi/ArtPop) are required for this package, which will be automatically installed when you run `pip install -e .`. If you don't wanna cause conflicts with your existing packages, please make a new Python environment and install them there.
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 import sys
 import os
 import shutil
-from rosesim.scripts.sim_sky import main
+# from rosesim.scripts.sim_sky import main
 # We need to import DATA_PATH to know where to check for output
 from rosesim import DATA_PATH
 
@@ -23,25 +23,7 @@ class TestEmptySky(unittest.TestCase):
             shutil.rmtree(self.output_dir)
 
     def test_run_command(self):
-        # The command arguments as specified by the user
-        test_args = [
-            "rosesim_sky",
-            "--obs_ra=150.1049",
-            "--obs_dec=2.2741",
-            "--size=501",
-            f"--prefix={self.prefix}",
-            "--exptime=642",
-            "--filters=['F106']",
-            "--seed=42",
-            "--include_bkg=False",
-            "--include_star=False",
-            "--psf_fov_arcsec=10"
-        ]
-        
-        # Mock sys.argv to simulate running from command line
-        with patch.object(sys, 'argv', test_args):
-            # Run the main function
-            main()
+        os.system('rosesim_sky --obs_ra=150.1049 --obs_dec=2.2741 --size=501 --prefix=empty_sky_test --exptime=642 --filters=["F106"] --seed=42 --include_bkg=False --include_star=False --psftype="epsf"')
 
         # Check if the output directory was created
         self.assertTrue(os.path.isdir(self.output_dir), f"Output directory {self.output_dir} was not created")
