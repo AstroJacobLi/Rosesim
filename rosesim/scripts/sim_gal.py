@@ -16,7 +16,7 @@ from rosesim import DATA_PATH, pixel_scale
 def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30, 
                log_age=9.0, feh=-1.5, abs_mag_lim=0, filters=['F129', 'F158', 'F106'], exptime=642, 
                n=0.8, theta=100, ellip=0.3,
-               sky_model=DATA_PATH + "sky_jaguar_trilegal/", psftype='galsim', fastpointsources=True):
+               sky_model=DATA_PATH + "sky_jaguar_trilegal/", name=None, psftype='galsim', fastpointsources=True):
     """
     Simulate a mock galaxy and inject it into a background image.
 
@@ -52,6 +52,8 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
         The type of PSF to use for point sources. If stars are not bright, `psftype='epsf'` is typically okay and much faster. If stars are bright, `psftype='galsim'` is recommended.
     fastpointsources : bool
         Whether to use fast point sources.
+    name : str
+        The name of the galaxy. If None, use the default name (a combination of the input parameters)
     """
     # some checks
     available_filters = ['F106', 'F129', 'F158']
@@ -67,8 +69,11 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
                   'total_mass': 10**log_m_star,
                   'r_eff': 10**rosesim.mass_size_carlsten(log_m_star) / 1000 * u.kpc,
                   'distance': distance * u.Mpc}
+    if name is None:
+        name = f'dw_1e{log_m_star:.1f}_{gal_kwargs["distance"].to(u.Mpc).value:.1f}Mpc_age{np.log10(gal_kwargs["age"].value):.1f}_feh{gal_kwargs["feh"]:.1f}'
+    gal_kwargs['name'] = name
 
-    gal = RomanGalaxy(prefix=f'dw_1e{log_m_star:.1f}_{gal_kwargs["distance"].to(u.Mpc).value:.1f}Mpc_age{np.log10(gal_kwargs["age"].value):.1f}_feh{gal_kwargs["feh"]:.1f}', data_dir=DATA_PATH)
+    gal = RomanGalaxy(prefix=gal_kwargs['name'], data_dir=DATA_PATH)
 
     print(f'Simulating galaxy {gal.prefix}')
 
