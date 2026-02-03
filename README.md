@@ -116,23 +116,11 @@ For dwarf galaxies, it might be better to use `psftype='epsf'` and `fastpointsou
 
 #### 1. Simulate a Sky Model
 To generate an **empty sky** (for noise-only or background-free simulations):
-<<<<<<< HEAD
-```bash
-rosesim_sky \
-  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
-```
-
-
-Generate a full sky model including background galaxies and Milky Way stars:
-=======
->>>>>>> update_rosesim
 ```bash
 rosesim_sky \
   --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
 ```
 
-<<<<<<< HEAD
-=======
 
 Generate a full sky model including background galaxies and Milky Way stars, e.g., for the sky around NGC 253:
 ```bash
@@ -163,7 +151,6 @@ rosesim_sky \
   --exclude_size_thresh=0.15
 ```
 
->>>>>>> update_rosesim
 
 For the sky around Cen A:
 ```bash
@@ -174,11 +161,7 @@ rosesim_sky \
   --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
-<<<<<<< HEAD
-8 times more exposure time:
-=======
 If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
->>>>>>> update_rosesim
 ```bash
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
@@ -187,10 +170,6 @@ rosesim_sky \
   --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
-<<<<<<< HEAD
-=======
-
->>>>>>> update_rosesim
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
 
 #### 2. Simulate a Single Dwarf Galaxy
@@ -219,11 +198,7 @@ simulate_galaxy(
 )
 ```
 
-<<<<<<< HEAD
-Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc. Currently the size is fixed to follow the average mass-size relation in Carlsten+21. 
-=======
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc. Currently the galaxy size is fixed to follow the average mass-size relation in Carlsten+21. 
->>>>>>> update_rosesim
 
 ### Python API
 
