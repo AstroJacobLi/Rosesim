@@ -27,10 +27,19 @@ If you use `Rosesim` in your work, please cite it:
 You can install **Rosesim** locally by cloning the repository and running:
 
 ```bash
-git clone git@github.com:AstroJacobLi/Rosesim.git
+git clone https://github.com/AstroJacobLi/Rosesim.git
 cd Rosesim
 pip install -e .
 ```
+
+When installing `romanisim`, you have to set the following for the CRDS cache:
+```bash
+export CRDS_PATH="$gpfs/Data/temp/crds_cache" # or any other directory
+export CRDS_SERVER_URL="https://roman-crds.stsci.edu"
+```
+> [!CAUTION]
+> The customized [`romanisim`](https://github.com/AstroJacobLi/romanisim) and [`artpop`](https://github.com/AstroJacobLi/ArtPop) are required for this package, which will be automatically installed when you run `pip install -e .`. If you don't wanna cause conflicts with your existing packages, please make a new Python environment and install them there.
+
 
 ### 2. Set Up Environment Variables
 **Rosesim** requires a dedicated data directory to store large files (e.g., isochrones, sky models). 
@@ -87,14 +96,21 @@ To simulate realistic observations, `Rosesim` includes a background sky model co
 > [!CAUTION]
 > JAGUAR fluxes are currently based on JWST filters, and are converted to Roman filters using simple stellar population models. Also the background galaxies do not have any spatial clustering.
 
+> [!NOTE]
+> A quick note on the PSF. `romanisim` now takes `psftype` as an argument, which can be either `galsim`, `epsf`, or `stpsf`. If your star is bright, we recommend using `psftype='galsim'` as its PSF box is large enough to cover the PSF wings and spikes far enough. Turning on `fastpointsources=True` will speed up the simulation, without compromising the PSF quality. For faint stars, we recommend using `psftype='epsf'` and `fastpointsources=True`, as it is much faster. 
+
 ## Usage
 
 ### Command Line Interface
 
 **Rosesim** provides command-line scripts for common simulation tasks. The scripts are located in `rosesim/scripts/`.
 
+We strongly encourage to use `psftype='galsim'` for simulating bright stars, as its PSF box is larger. 
+For dwarf galaxies, it might be better to use `psftype='epsf'` and `fastpointsources=True`.
+
 #### 1. Simulate a Sky Model
 To generate an **empty sky** (for noise-only or background-free simulations):
+<<<<<<< HEAD
 ```bash
 rosesim_sky \
   --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --psf_fov_arcsec=10
@@ -102,30 +118,73 @@ rosesim_sky \
 
 
 Generate a full sky model including background galaxies and Milky Way stars:
+=======
+>>>>>>> update_rosesim
 ```bash
 rosesim_sky \
-  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='sky_jaguar_trilegal' \
-  --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=10 --trilegal_file="trilegal_Roman_30mag_10h_0deg.dat"
+  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
 ```
 
+<<<<<<< HEAD
+=======
+
+Generate a full sky model including background galaxies and Milky Way stars, e.g., for the sky around NGC 253:
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
+  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+```
+
+This corresponds to the default HLWAS depth (2 pointings, 3 dithers per pointing, and each exposure takes 107s). If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
+
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
+  --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+```
+
+If you wanna exclude large galaxies that have R_e > 0.15 arcsec by using `--exclude_size_thresh=0.15`,
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253_sizecut' \
+  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" \
+  --exclude_size_thresh=0.15
+```
+
+>>>>>>> update_rosesim
 
 For the sky around Cen A:
 ```bash
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
-  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
+<<<<<<< HEAD
 8 times more exposure time:
+=======
+If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
+>>>>>>> update_rosesim
 ```bash
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
-  --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=True --include_star=True \
-  --psf_fov_arcsec=15 --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> update_rosesim
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
 
 #### 2. Simulate a Single Dwarf Galaxy
@@ -145,7 +204,7 @@ simulate_galaxy(
     log_age=9.0,
     feh=-1.5,
     abs_mag_lim=-1,
-    filters=["F129", "F158", "F106"],
+    filters=["F106", "F129", "F158"],
     exptime=642,
     n=0.8,
     theta=100,
@@ -154,7 +213,11 @@ simulate_galaxy(
 )
 ```
 
+<<<<<<< HEAD
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc. Currently the size is fixed to follow the average mass-size relation in Carlsten+21. 
+=======
+Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc. Currently the galaxy size is fixed to follow the average mass-size relation in Carlsten+21. 
+>>>>>>> update_rosesim
 
 ### Python API
 
@@ -174,13 +237,14 @@ rosesim.asdf_to_fits(sky_dm, 'F158_642s.fits', subtract_bkg=True)
 
 ## Requirements
 The package relies on the following libraries:
-- `numpy`, `matplotlib`, `astropy`, `astroquery`
-- `artpop`, `asdf`, `astrocut`, `roman_datamodels`
+- `numpy`, `matplotlib`, `astropy`, `astroquery`, `asdf`, `astrocut`, `roman_datamodels`
 - `romanisim` (Modified version required: [GitHub](https://github.com/AstroJacobLi/romanisim))
+- `artpop` (Modified version required: [GitHub](https://github.com/AstroJacobLi/artpop))
 
 
 ## Future Plans
 - [ ] Add stellar population info to ASDF `meta`.
+- [ ] Simulate L2 images with different MA tables.
 - [ ] Support more diverse sky background options.
 - [ ] Support composite stellar populations and user-defined structural parameters.
 - [ ] Expand documentation and examples.
