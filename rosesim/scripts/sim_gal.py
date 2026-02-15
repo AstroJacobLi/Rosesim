@@ -16,7 +16,7 @@ from rosesim import DATA_PATH, pixel_scale
 def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30, 
                log_age=9.0, feh=-1.5, abs_mag_lim=0, filters=['F129', 'F158', 'F106'], exptime=642, 
                n=0.8, theta=100, ellip=0.3,
-               sky_model=DATA_PATH + "sky_jaguar_trilegal/", name=None, psftype='galsim', fastpointsources=True):
+               sky_model=DATA_PATH + "sky_jaguar_trilegal/", name=None, psftype='epsf', fastpointsources=True):
     """
     Simulate a mock galaxy and inject it into a background image.
 

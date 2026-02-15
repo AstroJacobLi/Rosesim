@@ -118,7 +118,16 @@ For dwarf galaxies, it might be better to use `psftype='epsf'` and `fastpointsou
 To generate an **empty sky** (for noise-only or background-free simulations):
 ```bash
 rosesim_sky \
-  --obs_ra=150.1049 --obs_dec=2.2741 --size=5001 --prefix='empty_sky_test' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+  --obs_ra=150 --obs_dec=0 --size=5001 --prefix='empty_sky' --exptime=642 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=4096 --prefix='empty_sky' --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=5001 --prefix='empty_sky' --exptime=10272 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=5001 --prefix='empty_sky' --exptime=5136 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
 ```
 
 
@@ -135,8 +144,23 @@ This corresponds to the default HLWAS depth (2 pointings, 3 dithers per pointing
 
 ```bash
 rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=4096 --prefix='sky_jaguar_trilegal_ngc253' \
+  --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+
+rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+```
+
+This is 16 times longer exposure time:
+```bash
+rosesim_sky \
+  --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
+  --exptime=10272 --nexp=96 --filters="['F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
   --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
 ```
@@ -155,6 +179,12 @@ rosesim_sky \
 For the sky around Cen A:
 ```bash
 rosesim_sky \
+  --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=4096 --prefix='sky_jaguar_trilegal_cena' \
+  --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+
+rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
@@ -170,20 +200,31 @@ rosesim_sky \
   --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
+16 times longer exposure time:
+```bash
+rosesim_sky \
+  --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
+  --exptime=10272 --nexp=96 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+```
+
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
 
 #### 2. Simulate a Single Dwarf Galaxy
 Inject a specific dwarf galaxy into an empty sky model:
 ```bash
-rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --log_age=9.0 --log_m_star=4 --exptime=642 --sky_model=$ROSESIM_DATA_PATH/empty_sky/
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=10 --log_age=10.0 --log_m_star=5 --exptime=642 --sky_model=$ROSESIM_DATA_PATH/empty_sky/
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=10 --log_age=10.0 --log_m_star=5.5 --exptime=10272 --sky_model=$ROSESIM_DATA_PATH/empty_sky/
 ```
 You don't need to specify the number of exposures because that is already encoded in the sky model. Make sure that your input RA, Dec matches the sky model. See `rosesim_gal --help` for more options.
 
 A full list of options for simulating the dwarf galaxy is as follows:
 ```python
 simulate_galaxy(
-    obs_ra=150.1049,
-    obs_dec=2.2741,
+    obs_ra=150,
+    obs_dec=0,
     log_m_star=6,
     distance=30,
     log_age=9.0,

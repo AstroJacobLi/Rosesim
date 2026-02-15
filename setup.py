@@ -2,9 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='rosesim',
-    version='0.1.0',
+    version='0.1.1',
     description='Image simulations for semi-resolved dwarf galaxies for Roman',
     author='Jiaxuan Li',
+    author_email='jiaxuanl@princeton.edu',
     packages=find_packages(),
     install_requires=[
         'numpy',

@@ -108,7 +108,7 @@ class RomanSky(object):
         self.obs_time = Time.now()  # Current time as observation time
 
     def load_cosmos_bkg(self, radius=0.2, seed=4642):
-        optical_element = 'F062 F087 F106 F129 F146 F158 F184'.split()
+        optical_element = 'F062 F087 F106 F129 F146 F158 F184 F213'.split()
         bkg_cat = catalog.make_cosmos_galaxies(SkyCoord(ra=self.ra, dec=self.dec, unit='deg'), 
                                                radius=radius, bandpasses=optical_element, rng=None, seed=seed, 
                                                filename=None, cat_area=None)
@@ -118,14 +118,14 @@ class RomanSky(object):
         self.bkg_cat = bkg_cat
         
     def load_jaguar_bkg(self, radius=0.2, seed=4642):
-        optical_element = 'F062 F087 F106 F129 F146 F158 F184'.split()
+        optical_element = 'F062 F087 F106 F129 F146 F158 F184 F213'.split()
         coord = SkyCoord(ra=self.ra, dec=self.dec, unit='deg')
         bkg_cat = make_jaguar_galaxies(coord, radius=radius, bandpasses=optical_element, rng=None, seed=seed)
         self.bkg_cat = bkg_cat
         
     def load_gaia_star(self, radius=0.2):
         coord = SkyCoord(ra=self.ra, dec=self.dec, unit='deg')
-        optical_element = 'F062 F087 F106 F129 F146 F158 F184'.split()
+        optical_element = 'F062 F087 F106 F129 F146 F158 F184 F213'.split()
         gaia_cat = catalog.make_gaia_stars(coord, radius=radius, bandpasses=optical_element)
         # change ra dec to the center of the image
         # gaia_cat['ra'] += self.ra - 150.1208109
@@ -151,7 +151,7 @@ class RomanSky(object):
         seed: int
             Random seed for reproducibility.
         """
-        optical_element = 'F062 F087 F106 F129 F146 F158 F184'.split()
+        optical_element = 'F062 F087 F106 F129 F146 F158 F184 F213'.split()
         trilegal_cat = Table.read(path, format='ascii')
         trilegal_cat = trilegal_cat[optical_element]
         trilegal_cat['ID'] = np.arange(len(trilegal_cat))
@@ -285,6 +285,8 @@ class RomanSymphony(object):
         
         self.sky_dm = sky_dm
         self.dm = sky_dm.copy()
+        # now I wanna manually shift the wcs by a tiny bit to represent sub-pixel ditheres
+        self.dm.wcs.wcs.crpix -= 0.5
         print(f'Loaded background from {bkg_file}')
         
     def gen_catalog(self):
