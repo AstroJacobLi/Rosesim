@@ -1,7 +1,7 @@
 import os, sys
 import numpy as np
 from astropy import units as u
-from astropy.table import Table, Column, vstack, hstack
+from astropy.table import Table, Column, vstack, hstack, MaskedColumn
 from astropy.io import fits
 import artpop
 import asdf
@@ -36,9 +36,10 @@ def make_wcs(ra, dec, pa, xy_dim):
 # image co-ordinates and fluxes
 def create_point_source_catalogue(wcs, xs, ys, mag_table):
     """
-    mag_table should be in maggies. 
+    mag_table should be in maggies. Now the wcs is a gWCS object. 
     """
-    ra_dec = wcs.all_pix2world(xs, ys, 1)
+    # ra_dec = wcs.all_pix2world(xs, ys, 1)
+    ra_dec = wcs.pixel_to_world_values(xs, ys)
     ras = ra_dec[0]
     decs = ra_dec[1]
     t = Table()
@@ -49,11 +50,14 @@ def create_point_source_catalogue(wcs, xs, ys, mag_table):
     return t
 
 def create_smoooth_sersic_catalogue(wcs, src):
+    """
+    mag_table should be in maggies. Now the wcs is a gWCS object. 
+    """
     models = [src.smooth_model]
     xs = [model.x_0.value for model in models]
     ys = [model.y_0.value for model in models]
 
-    ra_dec = wcs.all_pix2world(xs, ys, 1)
+    ra_dec = wcs.pixel_to_world_values(xs, ys)
     ras = ra_dec[0]
     decs = ra_dec[1]
 
@@ -376,6 +380,57 @@ def asdf_to_fits(dm, output_filename, subtract_bkg=True):
     
     return None
 
+
+def get_subpixel_dither(obs_ra, obs_dec, pattern='SUB4', subpix=True, display=False):
+    if pattern=='SUB4':
+        # Default SUB4 pattern (arcsec)
+        dither_pattern = np.array([
+            (0.0000,  0.0000),  (-0.0825, -0.0275),
+            (-0.0275,  0.0550), (0.0550,   0.0825)
+        ])
+    elif pattern=='LINEGAP4_1':
+        dither_pattern = np.array([
+            (0.0000,  0.0000),  (-113.40, 113.40),
+            (-226.80, 226.80), (-340.20, 340.20)
+        ])
+    elif pattern=='BOXGAP4_1':
+        dither_pattern = np.array([
+            (0.0000,  0.0000),  (-205.20, 0.88),
+            (-204.32, 206.08), (0.88, 205.20)
+        ])
+    elif pattern=='LINEGAP5_1':
+        dither_pattern = np.array([
+            (0.0000,  0.0000),  (-113.40, 113.40),
+            (-170.10, 170.10), (-226.80, 226.80),
+            (-340.20, 340.20)
+        ])
+    elif pattern=='BOXGAP5_1':
+        dither_pattern = np.array([
+            (0.0000,  0.0000),  (-205.20, 0.88),
+            (-204.32, 206.08), (0.88, 205.20),
+            (-102.16, 103.04)
+        ])
+    else:
+        raise ValueError(f"{pattern} dither pattern not implemented yet.")
+
+    if subpix:
+        pixel_scale = 0.11
+        dither_pix = np.mod(dither_pattern / pixel_scale, 1.0)
+        dither_pattern = dither_pix * pixel_scale
+        print("Dither in pixels:\n", dither_pix)
+        if display:
+            fig, ax = plt.subplots(figsize=(2,2))
+            ax.scatter(dither_pix[:, 0], dither_pix[:, 1])
+            ax.set_xlabel("dRA [pix]")
+            ax.set_ylabel("dDec [pix]")
+            ax.set(xlim=(-0.2, 1.2), ylim=(-0.2, 1.2))
+            plt.show()
+    dither_pattern /= 3600
+    cos_dec = np.cos(np.deg2rad(obs_dec))
+    offsets = [(dra / cos_dec, ddec) for dra, ddec in dither_pattern]
+    return offsets
+
+
 ############### DOLPHOT #####################
 import re
 from pathlib import Path
@@ -383,7 +438,6 @@ import romanisim
 import romanisim.bandpass
 import romanisim.parameters
 from astropy.coordinates import SkyCoord
-
 def _slug(s: str) -> str:
     s = s.strip().lower()
     s = re.sub(r"[^\w]+", "_", s)
@@ -392,22 +446,43 @@ def _slug(s: str) -> str:
 
 def _parse_imgid(imgid):
     """
-    Parse a DOLPHOT ImageID like 'F158_642s' or 'F106_1200sec'.
+    Parse a DOLPHOT ImageID like:
+      - 'F158_642s'
+      - 'F106_1200sec'
+      - 'F158_600s.SUB4.dither1'
+      - 'ROMAN_F106'
 
     Returns
     -------
     filt : str
-        Filter name (e.g. 'F158')
+        Filter name (e.g. 'F158', 'F106')
     exptime : float or None
-        Exposure time in seconds
+        Exposure time in seconds (if encoded in the ImageID)
+    tag : str or None
+        Trailing tag after the exptime token (e.g. 'SUB4.dither1'), or None
     """
-    m = re.match(r"(?P<filt>[^_]+)(?:_(?P<t>\d+)(?:s|sec))?$", imgid)
+    import re
+
+    # Normalize 'ROMAN_F106' -> 'F106'
+    imgid0 = imgid.strip()
+    if imgid0.upper().startswith("ROMAN_"):
+        imgid0 = imgid0.split("ROMAN_", 1)[1]
+
+    m = re.match(
+        r"^(?P<filt>[^_.]+)"                 # up to '_' or '.' (filter-like token)
+        r"(?:_(?P<t>\d+)(?:s|sec))?"         # optional _600s / _600sec
+        r"(?:[._](?P<tag>.*))?$",            # optional trailing tag after '.' or '_'
+        imgid0
+    )
     if not m:
-        return imgid, None
+        return imgid, None, None
 
     filt = m.group("filt")
     t = m.group("t")
-    return filt, (float(t) if t is not None else None)
+    tag = m.group("tag")
+
+    return filt, (float(t) if t is not None else None), (tag if tag else None)
+
 
 def _parse_dolphot_columns(columns_path, fake=False):
     base = [
@@ -429,10 +504,14 @@ def _parse_dolphot_columns(columns_path, fake=False):
         "Roundness": "round",
         "Crowding": "crowd",
         "Photometry quality flag": "qflag",
+        # These appear in some headers as "Total counts, ROMAN_F106" etc.
+        "Total counts": "counts",
+        "Total sky level": "sky",
     }
 
     names = []
     filters = set()
+    exptime_by_col = {}  # maps generated column name -> exptime (sec) when known
 
     for line in Path(columns_path).read_text().splitlines():
         m = re.match(r"^\s*(\d+)\.\s*(.+?)\s*$", line)
@@ -450,106 +529,315 @@ def _parse_dolphot_columns(columns_path, fake=False):
         m2 = re.match(r"([^,]+),\s*([^\s(]+)", desc)
         if m2:
             metric, imgid = m2.group(1).strip(), m2.group(2).strip()
-            filt, exptime = _parse_imgid(imgid)
+
+            # Primary parse from the ImageID token itself
+            filt, exptime, tag = _parse_imgid(imgid)
+
+            # If exptime not in ImageID, try parsing it from the parenthetical "(..., 600.0 sec)"
+            if exptime is None:
+                mexp = re.search(r",\s*(\d+(?:\.\d+)?)\s*sec\)", desc)
+                if mexp:
+                    exptime = float(mexp.group(1))
+
+            # Track filters
             filters.add(filt)
+
             short = metric_map.get(metric, _slug(metric))
-            name = f"{short}_{_slug(filt)}"
+
+            # Column naming:
+            # - Coadd-style metrics like "Total counts, ROMAN_F106" get: counts_f106
+            # - Per-image metrics like "Measured counts, F106_600s.SUB4.dither1" get: counts_f106_sub4_dither1
+            if tag is None:
+                name = f"{short}_{_slug(filt)}"
+            else:
+                name = f"{short}_{_slug(filt)}_{_slug(tag)}"
+
+            # Stash exptime for this derived column (if present)
+            if exptime is not None:
+                exptime_by_col[name] = float(exptime)
+
         else:
             name = _slug(desc)
 
         names.append(name)
 
-    filters = sorted(filters, key=lambda f: int(f[1:]))
+    # Sort filters in a Roman-like way if possible, else lexicographically
+    def _fkey(f):
+        m = re.match(r"^[A-Za-z]+(\d+)$", f)
+        return (0, int(m.group(1))) if m else (1, f)
 
-    # ensure uniqueness
+    filters = sorted(filters, key=_fkey)
+
+    # Ensure uniqueness of column names
     out, seen = [], {}
     for n in names:
         seen[n] = seen.get(n, 0) + 1
         out.append(n if seen[n] == 1 else f"{n}_{seen[n]}")
 
+    # If duplicates were disambiguated, carry exptime mapping over to the suffixed names when possible
+    if any(seen[n] > 1 for n in seen):
+        # rebuild a new map matching final names
+        new_map = {}
+        counts_seen = {}
+        for n in out:
+            # strip a trailing "_<int>" only if it was appended for uniqueness
+            m = re.match(r"^(.*)_(\d+)$", n)
+            base_n = m.group(1) if m else n
+            if base_n in exptime_by_col:
+                # If multiple columns share same base_n, they will get _2, _3, ...
+                new_map[n] = exptime_by_col[base_n]
+        exptime_by_col = new_map
+
     if fake:
-        print('Filters:', filters)
-        temp = ['ext_ast', 'chip_ast', 'x_true', 'y_true']
+        print("Filters:", filters)
+        temp = ["ext_ast", "chip_ast", "x_true", "y_true"]
         for filt in filters:
-            temp += [f'counts_true_{filt.lower()}', f'mag_true_{filt.lower()}']
+            temp += [f"counts_true_{filt.lower()}", f"mag_true_{filt.lower()}"]
         out = temp + out
     
-    return out, sorted(filters), exptime
+    exptime_by_col = add_coadd_exptimes(exptime_by_col)
+    
+    return out, filters, exptime_by_col
+
+import re
+
+import re
+
+def add_coadd_exptimes(exptime_by_col):
+    """
+    For coadd-style keys like 'counts_f106', set their exptime to the sum of the
+    per-image exptimes that share the SAME metric prefix, e.g.
+      counts_f106_sub4_dither0..N  -> counts_f106 = sum(...)
+      mag_vega_f106_sub4_dither0..N -> mag_vega_f106 = sum(...)
+    """
+    # Match:
+    #   <metric>_<filt>_<tag>
+    # where metric may contain underscores (e.g. 'mag_vega', 'rate_err')
+    pat = re.compile(r"^(?P<metric>.+)_(?P<filt>f\d+?)_(?P<tag>.+)$", re.I)
+
+    sums = {}  # (metric_lower, filt_lower) -> total_exptime
+
+    for k, t in exptime_by_col.items():
+        m = pat.match(k)
+        if not m:
+            continue
+        metric = m.group("metric").lower()
+        filt   = m.group("filt").lower()
+        sums[(metric, filt)] = sums.get((metric, filt), 0.0) + float(t)
+
+    # Write coadd keys: <metric>_<filt>
+    for (metric, filt), ttot in sums.items():
+        exptime_by_col[f"{metric}_{filt}"] = ttot
+
+    return exptime_by_col
 
 def read_dolphot_cat(path, column_path, fake=False):
-    import romanisim
+    import numpy as np
     import romanisim.bandpass
+    from astropy.table import Table
 
-    names, filters, exptime = _parse_dolphot_columns(column_path, fake=fake)
-    print('Exptime:', exptime, 'Filters:', filters)
+    names, filters, exptime_by_col = _parse_dolphot_columns(column_path, fake=fake)
+    print("Filters:", filters)
 
-    cat = Table.read(path, format='ascii.no_header', names=names)
-    cat.remove_columns([f'mag_ubvri_{filt.lower()}' for filt in filters])
-    cat.remove_columns([f'rate_{filt.lower()}' for filt in filters])
-    cat.remove_columns([f'rate_err_{filt.lower()}' for filt in filters])
+    cat = Table.read(path, format="ascii.no_header", names=names)
 
-    for filt in filters:
-        maggytoes = romanisim.bandpass.get_abflux(filt, sca=cat['chip'][0] + 1)
-        cat[f'mag_vega_{filt.lower()}'] = -2.5 * np.log10(cat[f'counts_{filt.lower()}'] / exptime / maggytoes)
+    # Drop UBVRI mags and rate columns (now may exist for many images/dithers)
+    drop = [c for c in cat.colnames
+            if c.startswith("mag_ubvri_") or c.startswith("rate_") or c.startswith("rate_err_")]
+    if drop:
+        cat.remove_columns(drop)
+
+    # Convert counts_* -> mag_ab_* wherever we know the relevant exposure time.
+    # We infer the filter from the column name: counts_<filt>[...]
+    for col in list(cat.colnames):
+        if not col.startswith("counts_"):
+            continue
+        # Parse filter token from the column name
+        # Handles both: counts_f106_sub4_dither1  and  counts_F106
+        parts = col.split("_", 2)  # at most: ["counts", "<filter>", "<rest...>"]
+        if len(parts) < 2:
+            continue
+        filt_token = parts[1]          # keep original case
+        filt = filt_token.upper()      # e.g. "F106" already OK
+    
+        # Optional sanity: enforce "F###" form if needed
+        # (romanisim.bandpass.get_abflux expects "F106", "F158", etc.)
+        if not re.match(r"^F\d+$", filt):
+            # try to recover digits
+            m = re.search(r"(\d+)", filt)
+            if m:
+                filt = f"F{m.group(1)}"
+            else:
+                continue
+
+        exptime = exptime_by_col.get(col, None)
+        if exptime is None:
+            # If you *want* to compute coadd mags too, you must decide what exptime means there.
+            # For now: skip when ambiguous/unavailable.
+            continue
+
+        # Use chip/sca to get AB flux conversion
+        sca = int(cat["chip"][0]) + 1
+        maggytoes = romanisim.bandpass.get_abflux(filt, sca=sca)
+        magcol = col.replace("counts_", "mag_ab_", 1)
+        cat[magcol] = -2.5 * np.log10(cat[col] / exptime / maggytoes)
+
         if fake:
-            cat[f'mag_true_{filt.lower()}'] = -2.5 * np.log10(cat[f'counts_true_{filt.lower()}'] / exptime / maggytoes)
-
-    cat.rename_columns([f'mag_vega_{filt.lower()}' for filt in filters], [f'mag_ab_{filt.lower()}' for filt in filters])
+            true_col = f"counts_true_{filt.lower()}"
+            if true_col in cat.colnames:
+                cat[f"mag_true_{filt.lower()}"] = -2.5 * np.log10(cat[true_col] / exptime / maggytoes)
 
     if fake:
         for col in cat.colnames:
-            if cat[col].dtype.kind in "f":  # int or float
+            if cat[col].dtype.kind in "f":
                 cat[col][cat[col] == 99.999] = np.nan
                 cat[col][cat[col] == 9.999] = np.nan
-                # cat[col][cat[col] == 0.0] = np.nan
-            
+
     return cat
 
+# def xmatch_true_meas(true_cat, cat, radius=0.4*u.arcsec,
+#                      true_ra='ra', true_dec='dec',
+#                      meas_ra='ra', meas_dec='dec',
+#                      true_prefix='true_', meas_prefix='meas_',
+#                      keep='all'):
+#     """
+#     Cross-match measured catalog 'cat' to truth 'true_cat' within 'radius'. This is used to test how much of the sources from Rosesim are detected by Dolphot, for QA purposes.
+
+#     keep:
+#       - 'all'   : keep all matches (many measured can map to same true)
+#       - 'best'  : keep at most one measured per true (smallest separation)
+#     """
+#     c_true = SkyCoord(true_cat[true_ra], true_cat[true_dec], unit='deg')
+#     c_meas = SkyCoord(cat[meas_ra], cat[meas_dec], unit='deg')
+
+#     # For each measured source, find nearest truth source
+#     idx_true, d2d, _ = c_meas.match_to_catalog_sky(c_true)
+
+#     m = d2d < radius
+#     meas_m = cat[m]
+#     true_m = true_cat[idx_true[m]]
+#     sep_m  = d2d[m]
+
+#     if keep == 'best':
+#         # enforce one-to-one on the truth side: keep the closest measured per true
+#         order = np.argsort(sep_m)  # closest first
+#         true_ids = idx_true[m][order]
+#         _, first = np.unique(true_ids, return_index=True)
+#         keep_idx = order[first]
+
+#         meas_m = meas_m[keep_idx]
+#         true_m = true_m[keep_idx]
+#         sep_m  = sep_m[keep_idx]
+
+#     # rename to avoid column collisions, then merge side-by-side
+#     meas_m = meas_m.copy()
+#     true_m = true_m.copy()
+#     meas_m.rename_columns(meas_m.colnames, [meas_prefix + c for c in meas_m.colnames])
+#     true_m.rename_columns(true_m.colnames, [true_prefix + c for c in true_m.colnames])
+
+#     out = hstack([meas_m, true_m], join_type='exact')
+#     out['sep_arcsec'] = sep_m.to_value(u.arcsec)
+
+#     return out
 
 def xmatch_true_meas(true_cat, cat, radius=0.4*u.arcsec,
                      true_ra='ra', true_dec='dec',
                      meas_ra='ra', meas_dec='dec',
                      true_prefix='true_', meas_prefix='meas_',
-                     keep='all'):
+                     keep='best'):
     """
-    Cross-match measured catalog 'cat' to truth 'true_cat' within 'radius'. This is used to test how much of the sources from Rosesim are detected by Dolphot, for QA purposes.
+    Cross-match measured catalog 'cat' to truth 'true_cat' within 'radius'.
+
+    Returns *all* rows of `cat`, with appended truth columns and:
+      - 'has_match'  : bool, whether this measured source is assigned a match
+      - 'sep_arcsec' : separation for matched sources, NaN otherwise
 
     keep:
-      - 'all'   : keep all matches (many measured can map to same true)
-      - 'best'  : keep at most one measured per true (smallest separation)
+      - 'all'  : many measured can map to same true (within radius)
+      - 'best' : enforce at most one measured per true (smallest separation);
+                unmatched measured sources remain in the output.
     """
+    import numpy as np
+    import astropy.units as u
+    from astropy.coordinates import SkyCoord
+    from astropy.table import hstack, Table
+
     c_true = SkyCoord(true_cat[true_ra], true_cat[true_dec], unit='deg')
     c_meas = SkyCoord(cat[meas_ra], cat[meas_dec], unit='deg')
 
     # For each measured source, find nearest truth source
     idx_true, d2d, _ = c_meas.match_to_catalog_sky(c_true)
 
-    m = d2d < radius
-    meas_m = cat[m]
-    true_m = true_cat[idx_true[m]]
-    sep_m  = d2d[m]
+    within = d2d < radius
+    n_meas = len(cat)
 
-    if keep == 'best':
-        # enforce one-to-one on the truth side: keep the closest measured per true
-        order = np.argsort(sep_m)  # closest first
-        true_ids = idx_true[m][order]
-        _, first = np.unique(true_ids, return_index=True)
-        keep_idx = order[first]
+    # Default: no match for everyone
+    has_match = np.zeros(n_meas, dtype=bool)
+    sep_arcsec = np.full(n_meas, np.nan, dtype=float)
+    true_row_for_meas = np.full(n_meas, -1, dtype=int)  # index into true_cat, -1 = none
 
-        meas_m = meas_m[keep_idx]
-        true_m = true_m[keep_idx]
-        sep_m  = sep_m[keep_idx]
+    if keep == 'all':
+        # Everyone within radius gets their nearest truth match (many-to-one allowed)
+        has_match[within] = True
+        sep_arcsec[within] = d2d[within].to_value(u.arcsec)
+        true_row_for_meas[within] = idx_true[within]
 
-    # rename to avoid column collisions, then merge side-by-side
-    meas_m = meas_m.copy()
-    true_m = true_m.copy()
-    meas_m.rename_columns(meas_m.colnames, [meas_prefix + c for c in meas_m.colnames])
-    true_m.rename_columns(true_m.colnames, [true_prefix + c for c in true_m.colnames])
+    elif keep == 'best':
+        # Candidate measured indices that are within radius
+        cand_meas = np.where(within)[0]
+        if cand_meas.size > 0:
+            # Sort candidates by separation (closest first), then take first per true_id
+            order = np.argsort(d2d[cand_meas])  # ascending
+            cand_meas_sorted = cand_meas[order]
+            cand_true_sorted = idx_true[cand_meas_sorted]
 
-    out = hstack([meas_m, true_m], join_type='exact')
-    out['sep_arcsec'] = sep_m.to_value(u.arcsec)
+            _, first = np.unique(cand_true_sorted, return_index=True)
+            best_meas = cand_meas_sorted[first]
 
-    return out, meas_m, true_m
+            has_match[best_meas] = True
+            sep_arcsec[best_meas] = d2d[best_meas].to_value(u.arcsec)
+            true_row_for_meas[best_meas] = idx_true[best_meas]
+    else:
+        raise ValueError("keep must be 'all' or 'best'")
+
+    # --- Build output table: all measured rows + truth columns (masked when no match) ---
+
+    meas_out = cat.copy()
+    meas_out.rename_columns(meas_out.colnames, [meas_prefix + c for c in meas_out.colnames])
+
+    # Create an "empty" truth table with same columns/types; mask everything initially
+    true_out = Table(masked=True)
+
+    for name in true_cat.colnames:
+        col = true_cat[name]
+        # preserve dtype (and unit if it is a Quantity column)
+        if hasattr(col, 'unit') and col.unit is not None:
+            data = np.empty(n_meas, dtype=col.dtype) * col.unit
+        else:
+            data = np.empty(n_meas, dtype=col.dtype)
+
+        true_out.add_column(MaskedColumn(data=data, name=name, mask=np.ones(n_meas, dtype=bool)))
+
+    # true_out = true_cat[:n_meas].copy(copy_data=True)  # same length as cat
+    # for col in true_out.colnames:
+    #     true_out[col] = true_out[col]  # keep dtype
+    #     true_out[col].mask = np.ones(n_meas, dtype=bool)  # mask all entries
+
+    # Fill matched rows with the corresponding truth rows, and unmask those entries
+    matched_meas = np.where(has_match)[0]
+    if matched_meas.size > 0:
+        src_true = true_cat[true_row_for_meas[matched_meas]]
+        for col in true_out.colnames:
+            true_out[col][matched_meas] = src_true[col]
+            true_out[col].mask[matched_meas] = False
+
+    true_out.rename_columns(true_out.colnames, [true_prefix + c for c in true_out.colnames])
+
+    out = hstack([meas_out, true_out], join_type='exact')
+    out['has_match'] = has_match
+    out['sep_arcsec'] = sep_arcsec
+
+    return out
 
 ### DOLPHOT photometric uncertainty and completeness analysis ###
 from scipy.optimize import curve_fit
