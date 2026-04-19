@@ -10,6 +10,7 @@ import sys
 import numpy as np
 from astropy.io import fits
 import os
+import glob
 
 # filters
 filters = ['F062', 'F087', 'F106', 'F129', 'F146', 'F158', 'F184', 'F213']
@@ -32,6 +33,11 @@ def prep(*filenames, exptime=None, rdnoise=None, chip=1, nodark=False):
     if not filenames:
         print("No filenames provided.")
         return
+
+    # can we get the files from a wildcard? 
+    # e.g., the first argument is a wildcard, and we expand it to a list of files
+    if len(filenames) == 1 and "*" in filenames[0]:
+        filenames = glob.glob(filenames[0])
 
     # calculate etomjysr, this is 1 e/s = X MJy/sr. Thus 1 MJy/sr = 1/X e/s
     etomjysr_dict = {}

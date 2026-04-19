@@ -15,6 +15,7 @@ import roman_datamodels as rdm
 from rosesim.utils import read_L3_asdf, make_wcs, create_point_source_catalogue, create_smoooth_sersic_catalogue, asdf_to_fits, make_jaguar_galaxies
 
 from rosesim import DATA_PATH
+import copy
 
 class RomanGalaxy(object):
     def __init__(self, prefix='dwarf_1e7_80Mpc', data_dir=DATA_PATH):
@@ -41,13 +42,29 @@ class RomanGalaxy(object):
         self.sky_dm = sky_dm
         self.dm = sky_dm.copy()
         print(f'Loaded background from {bkg_file}')
-        
+
+    def apply_dither(self, delta_ra, delta_dec):
+        from astropy.modeling.rotations import RotateNative2Celestial
+        # Apply corrections to the WCS if self.ra and self.dec are different from the WCS center of the background image
+        w = self.sky_dm.meta.wcs
+        w2 = copy.deepcopy(w)
+        tr = w2.forward_transform
+        rot = next(m for m in tr if isinstance(m, RotateNative2Celestial))
+        rot.lon = (rot.lon + delta_ra) % 360.0
+        rot.lat = np.clip(rot.lat + delta_dec, -90.0, 90.0)
+        self.dm.meta.wcs = w2
+
     def gen_catalog(self):
         # check if src is loaded
         if not hasattr(self, 'src'):
             raise ValueError("Source not loaded. Please load a source using load_src() method.")
-        self.roman_wcs = make_wcs(self.ra, self.dec, self.pa, self.src.xy_dim)
-        
+        # self.roman_wcs = make_wcs(self.ra, self.dec, self.pa, self.src.xy_dim)
+        if hasattr(self, 'sky_dm'):
+            self.roman_wcs = self.sky_dm.meta.wcs
+        else:
+            print('No background image loaded. Using default dummy WCS.')
+            self.roman_wcs = make_wcs(self.ra, self.dec, self.pa, self.src.xy_dim)
+
         # In Romanisim, the catalog brightnesses are specified in units of maggies, 
         # which are defined such that one maggie is equal to the reference AB magnitude flux (3,631 Jy), 
         # i.e., maggies = 10^(-0.4 * m_AB).
@@ -61,10 +78,12 @@ class RomanGalaxy(object):
             print("No point sources found in the source catalog.")
         else:
             pts_table.write(f'./temp/pts_table.ecsv', format='ascii.ecsv', overwrite=True)
-
-        gal_table = create_smoooth_sersic_catalogue(self.roman_wcs, self.src)
-        gal_table.write(f'./temp/gal_table.ecsv', format='ascii.ecsv', overwrite=True)
         
+        if hasattr(self.src, 'smooth_model'):
+            gal_table = create_smoooth_sersic_catalogue(self.roman_wcs, self.src)
+            gal_table.write(f'./temp/gal_table.ecsv', format='ascii.ecsv', overwrite=True)
+        else:
+            gal_table = Table()
         full_table = gal_table.copy()
         if len(pts_table) != 0:
             full_table = vstack([full_table, pts_table])
@@ -77,6 +96,13 @@ class RomanGalaxy(object):
         """
         For simulating the background sky image, because there will be bright MW stars, we recommend using `psftype='galsim'` because its bounding box is large enough to include enough amount of light. Using `psftype='epsf'` will make very bright stars look like a small block in the final image. For fainter sources, it is typically okay and much faster to use `psftype='epsf'`.
         """
+        # cut objects outside of the image
+        w = self.sky_dm.meta.wcs # after dither
+        pix_coord = w.world_to_pixel_values(self.obj_cat['ra'], self.obj_cat['dec'])
+        flag = (pix_coord[0] >= 0) & (pix_coord[0] < self.sky_dm.data.shape[1]) & (pix_coord[1] >= 0) & (pix_coord[1] < self.sky_dm.data.shape[0])
+        print(f'Cut {len(self.obj_cat) - len(self.obj_cat[flag])} objects outside of the image.')
+        self.obj_cat = self.obj_cat[flag]
+
         res_model = inject_sources_into_l3(self.dm, self.obj_cat, psftype=psftype, 
                                exptimes=exptimes, seed=rng_seed, 
                                fastpointsources=fastpointsources)
@@ -93,7 +119,8 @@ class RomanGalaxy(object):
 
 class RomanSky(object):
     def __init__(self, ra, dec, xy_dim=(2001, 2001), pa=0,
-                 prefix='dwarf_1e7_80Mpc', 
+                 prefix='dwarf_1e7_80Mpc', suffix=None,
+                 dither=[0, 0],
                  data_dir=DATA_PATH):
         if not os.path.isdir(os.path.join(data_dir, prefix)):
             os.makedirs(os.path.join(data_dir, prefix))
@@ -101,8 +128,12 @@ class RomanSky(object):
         if not os.path.isdir('temp'):
             os.makedirs('temp')
         self.prefix = prefix
+        self.suffix = suffix
         self.ra = ra
         self.dec = dec
+        self.dither = dither
+        self.fov_ra = ra + dither[0]
+        self.fov_dec = dec + dither[1]
         self.pa = pa
         self.xy_dim = xy_dim  # Dimensions of the image
         self.obs_time = Time.now()  # Current time as observation time
@@ -244,7 +275,10 @@ class RomanSky(object):
             full_table = full_table[full_table['half_light_radius'] < exclude_size_thresh]
             print(len(full_table), 'sources after excluding large galaxies.')
 
-        full_table.write(f'./temp/sky_table_{self.prefix}.ecsv', format='ascii.ecsv', overwrite=True)
+        if self.suffix is None:
+            full_table.write(f'./temp/sky_table_{self.prefix}.ecsv', format='ascii.ecsv', overwrite=True)
+        else:
+            full_table.write(f'./temp/sky_table_{self.prefix}.{self.suffix}.ecsv', format='ascii.ecsv', overwrite=True)
         self.obj_cat = full_table
 
 
@@ -253,7 +287,13 @@ class RomanSky(object):
             extra_args = '--fastpointsources'
         else:
             extra_args = ''
-        cmd = f"romanisim-make-l3 --bandpass {band} --radec {self.ra} {self.dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --psftype {psftype} {extra_args} --date {self.obs_time.isot} {DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf {DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
+        output_name = f"{DATA_PATH}/{self.prefix}/{band}_{exptime}s.asdf" if self.suffix is None else f"{DATA_PATH}/{self.prefix}/{band}_{exptime}s_{self.suffix}.asdf"
+        if self.suffix is None:
+            table_name = f"{DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.ecsv"
+        else:
+            table_name = f"{DATA_PATH}/{self.prefix}/temp/sky_table_{self.prefix}.{self.suffix}.ecsv"
+
+        cmd = f"romanisim-make-l3 --bandpass {band} --radec {self.fov_ra} {self.fov_dec} --npix {self.xy_dim[0]} --pixscalefrac 1.0 --exptime {exptime} --rng_seed {rng_seed} --nexposures {nexp} --psftype {psftype} {extra_args} --date {self.obs_time.isot} {output_name} {table_name}"
         print(f'Making mock Roman L3 image in {band} for {self.prefix}')
         os.system(cmd)
 
@@ -286,7 +326,7 @@ class RomanSymphony(object):
         self.sky_dm = sky_dm
         self.dm = sky_dm.copy()
         # now I wanna manually shift the wcs by a tiny bit to represent sub-pixel ditheres
-        self.dm.wcs.wcs.crpix -= 0.5
+        # self.dm.wcs.wcs.crpix -= 0.5
         print(f'Loaded background from {bkg_file}')
         
     def gen_catalog(self):

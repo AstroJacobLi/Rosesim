@@ -66,17 +66,22 @@ def show_image_wcs(
     if fig is None and ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    # To preserve details we should *really* downsample correctly and
-    # not rely on matplotlib to do it correctly for us (it won't).
+    # image can be 3D. If it's 3D, then its a RGB image
+    if image.ndim == 3:
+        rgb = True
+        ratio = 1
+    else:
+        rgb = False
+        # To preserve details we should *really* downsample correctly and
+        # not rely on matplotlib to do it correctly for us (it won't).
 
-    # So, calculate the size of the figure in pixels, block_reduce to
-    # roughly that,and display the block reduced image.
+        # So, calculate the size of the figure in pixels, block_reduce to
+        # roughly that,and display the block reduced image.
 
-    # Thanks, https://stackoverflow.com/questions/29702424/how-to-get-matplotlib-figure-size
-    fig_size_pix = fig.get_size_inches() * fig.dpi
-
-    ratio = (image.shape // fig_size_pix).max()
-
+        # Thanks, https://stackoverflow.com/questions/29702424/how-to-get-matplotlib-figure-size
+        fig_size_pix = fig.get_size_inches() * fig.dpi
+        ratio = (image.shape // fig_size_pix).max()
+    
     if ratio < 1:
         ratio = 1
 
@@ -109,16 +114,25 @@ def show_image_wcs(
             scale_args = dict(vmin=0, vmax=1)
         else:
             scale_args = dict(norm=norm)
-
-    im = ax.imshow(
-        image,
-        origin="lower",
-        cmap=cmap,
-        extent=extent,
-        aspect="equal",
-        interpolation=None,
-        **scale_args,
-    )
+    
+    if rgb:
+        im = ax.imshow(
+            image,
+            origin="lower",
+            extent=extent,
+            aspect="equal",
+            interpolation="nearest",
+        )
+    else:
+        im = ax.imshow(
+            image,
+            origin="lower",
+            cmap=cmap,
+            extent=extent,
+            aspect="equal",
+            interpolation=None,
+            **scale_args,
+        )
 
     if show_colorbar:
         divider = make_axes_locatable(ax)

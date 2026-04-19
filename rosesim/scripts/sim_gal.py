@@ -87,7 +87,7 @@ def simulate_galaxy(obs_ra=150.1049, obs_dec=2.2741, log_m_star=6, distance=30,
 
     dmod = 5 * np.log10(gal_kwargs['distance'].value) + 25
     mag_lim = dmod + abs_mag_lim
-    mag_lim = max(mag_lim, 28.0)
+    mag_lim = max(mag_lim, 29.0)
     print('mag lim', mag_lim)
 
     ### Using PARSEC isochrones
@@ -131,3 +131,6 @@ def main():
 # python sim_gal.py --obs_ra=150.1049 --obs_dec=2.2741 --distance=5 --age=1.0 --log_m_star=4 --exptime=642 --psftype='galsim' --fastpointsources=True
 
 # rosesim_gal --obs_ra=150.1049 --obs_dec=2.2741 --distance=1 --log_age=6.0 --log_m_star=4 --exptime=642 --abs_mag_lim=0
+
+
+# rosesim_gal --obs_ra=150 --obs_dec=0 --distance=8 --log_age=9.8 --log_m_star=5 --exptime=7400 --abs_mag_lim=0 --psftype='galsim' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/empty_sky_7400s/" --name='TDA'

@@ -100,14 +100,21 @@ from .data import fetch_data
 
 # Below are the completeness and photometric uncertainty for F106 and F158 at HLWAS depth
 # for high galactic latitude (e.g., NGC 253). For HLWAS depth, the completeness and photometric uncertainty are not sensitive to galactic latitude (e.g., NGC 253 vs CenA).
-hlwas_completeness_dict = {'F106': [26.8276654500533, 0.4966708077077806], 
-                           'F158': [26.472505389291722, 0.4872157948732412]} # HLWAS depth, sharp=0.03
+# hlwas_completeness_dict = {'F106': [26.8276654500533, 0.4966708077077806], 
+#                            'F158': [26.472505389291722, 0.4872157948732412]} # HLWAS depth, sharp=0.03
 
 # hlwas_completeness_dict = {'F106': [27.008117636813505, 0.48107939790663157], 
 #                            'F158': [26.658101038219538, 0.47365521442219355]} # HLWAS depth, sharp=0.05
 
-hlwas_mag_uncertainty_dict = {'F106': [0.33745871, -9.60010621], 
-                              'F158': [0.33819561, -9.55362927]} # HLWAS depth, sharp=0.03
+# hlwas_mag_uncertainty_dict = {'F106': [0.33745871, -9.60010621], 
+                            #   'F158': [0.33819561, -9.55362927]} # HLWAS depth, sharp=0.03
 
 # hlwas_mag_uncertainty_dict = {'F106': [0.33880419, -9.632484], 
 #                               'F158': [0.34034456, -9.60513677]} # HLWAS depth, sharp=0.05
+
+ripples_completeness_dict = {"3.5Mpc":{'F106': [27.602552363735068, 0.5251360606113693], 
+                                       'F158': [27.232389090274577, 0.5253926723598782],
+                                       'info': 'MA table IM_600_16, 5 exposures in each band'}}
+ripples_mag_uncertainty_dict = {"3.5Mpc":{'F106': [ 0.33868952, -9.97805577], 
+                                           'F158': [ 0.34465689, -10.0563257],
+                                           'info': 'MA table IM_600_16, 5 exposures in each band'}}

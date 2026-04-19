@@ -124,12 +124,18 @@ rosesim_sky \
   --obs_ra=150 --obs_dec=0 --size=4096 --prefix='empty_sky' --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
 
 rosesim_sky \
-  --obs_ra=150 --obs_dec=0 --size=5001 --prefix='empty_sky' --exptime=10272 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+  --obs_ra=150 --obs_dec=0 --size=1024 --prefix='empty_sky_1024' --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False --dither_pattern="LINEGAP4_1"
 
 rosesim_sky \
-  --obs_ra=150 --obs_dec=0 --size=5001 --prefix='empty_sky' --exptime=5136 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+  --obs_ra=150 --obs_dec=0 --size=2048 --prefix='empty_sky_2048' --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
+
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=2048 --prefix='empty_sky_7400s' --exptime=7400 --nexp=16 --filters="['F106', 'F129', 'F158']" --seed=42 --include_bkg=False --include_star=False
 ```
 
+```
+rosesim_sky   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=501 --prefix='sky_jaguar_trilegal_cena_test'   --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']"   --seed=42 --include_bkg=False --include_star=True   --fastpointsources=False --psftype='epsf' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat" --dither_pattern="LINEGAP5_1"
+```
 
 Generate a full sky model including background galaxies and Milky Way stars, e.g., for the sky around NGC 253:
 ```bash
@@ -137,7 +143,7 @@ rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
 ```
 
 This corresponds to the default HLWAS depth (2 pointings, 3 dithers per pointing, and each exposure takes 107s). If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
@@ -147,13 +153,13 @@ rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=4096 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
 
 rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
 ```
 
 This is 16 times longer exposure time:
@@ -162,7 +168,7 @@ rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253' \
   --exptime=10272 --nexp=96 --filters="['F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
 ```
 
 If you wanna exclude large galaxies that have R_e > 0.15 arcsec by using `--exclude_size_thresh=0.15`,
@@ -171,7 +177,7 @@ rosesim_sky \
   --obs_ra=11.8880580 --obs_dec=-25.2888000 --size=5001 --prefix='sky_jaguar_trilegal_ngc253_sizecut' \
   --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" \
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat" \
   --exclude_size_thresh=0.15
 ```
 
@@ -182,13 +188,13 @@ rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=4096 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=600 --nexp=1 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 
 rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=642 --nexp=6 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
 If you wanna simulate a deeper depth (e.g., 8 times longer exposure time), you can use the following command:
@@ -197,7 +203,7 @@ rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=5136 --nexp=48 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
 16 times longer exposure time:
@@ -206,7 +212,7 @@ rosesim_sky \
   --obs_ra=201.3704160 --obs_dec=-43.0166667 --size=5001 --prefix='sky_jaguar_trilegal_cena' \
   --exptime=10272 --nexp=96 --filters="['F106', 'F129', 'F158']" \
   --seed=42 --include_bkg=True --include_star=True \
-  --fastpointsources=True --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
+  --fastpointsources=False --psftype='galsim' --trilegal_file="trilegal_Roman_30mag_2deg2_CenA.dat"
 ```
 
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/01_simulate_JAGUAR_sky.ipynb) if you wanna make your own sky model.
@@ -240,6 +246,104 @@ simulate_galaxy(
 ```
 
 Check [this notebook](https://github.com/AstroJacobLi/Rosesim/blob/main/notebook/Rosesim/02_inject_dwarf.ipynb) if you wanna tune your dwarf galaxy's properties, such as size, age, metallicity, etc. Currently the galaxy size is fixed to follow the average mass-size relation in Carlsten+21. 
+
+
+### TDA proposal
+
+```bash
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=1024 --prefix='sky_jaguar_trilegal_TDA' \
+  --exptime=7400 --nexp=16 --filters="['F106', 'F129', 'F158']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=False --psftype='epsf' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+```
+
+```bash
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=8 --log_age=9.8 --log_m_star=5 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_8Mpc_1e5.0Msun'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=8 --log_age=9.8 --log_m_star=5.5 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_8Mpc_1e5.5Msun'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=8 --log_age=9.8 --log_m_star=6.0 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_8Mpc_1e6.0Msun'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=8 --log_age=9.8 --log_m_star=6.5 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_8Mpc_1e6.5Msun'
+
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=5 --log_age=9.8 --log_m_star=5 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_5Mpc_1e5.0Msun'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=5 --log_age=9.8 --log_m_star=5.5 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_5Mpc_1e5.5Msun'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=5 --log_age=9.8 --log_m_star=6.0 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_5Mpc_1e6.0Msun'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=5 --log_age=9.8 --log_m_star=6.5 --exptime=7400 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F106', 'F129', 'F158']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_TDA/" --name='TDA_5Mpc_1e6.5Msun'
+```
+
+
+### Roman-300 proposal (Sumit, supernova science)
+
+Assuming 135 * 8 = 1080s in F129 and F184
+
+```bash
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=1024 --prefix='sky_jaguar_trilegal_Roman_300' \
+  --exptime=1080 --nexp=1 --filters="['F106', 'F129', 'F184']" \
+  --seed=42 --include_bkg=True --include_star=True \
+  --fastpointsources=False --psftype='epsf' --trilegal_file="trilegal_Roman_30mag_2deg2_NGC253.dat"
+
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=1024 --prefix='empty_sky_Roman_300' \
+  --exptime=1080 --nexp=1 --filters="['F129', 'F184']" \
+  --seed=42 --include_bkg=False --include_star=False \
+  --fastpointsources=False --psftype='epsf'
+
+rosesim_sky \
+  --obs_ra=150 --obs_dec=0 --size=1024 --prefix='empty_sky_Roman_300_dither' \
+  --exptime=135 --nexp=1 --filters="['F129', 'F184']" \
+  --seed=42 --include_bkg=False --include_star=False \
+  --fastpointsources=False --psftype='epsf' --dither_pattern="BOXGAP4_1_SUB4"
+```
+
+Simulate some dwarfs:
+logAge=9.3 is kinda nice, it has some AGB stars but not too many.
+```bash
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.5 --log_m_star=6.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e6.5Msun_age9.5'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.0 --log_m_star=6.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e6.5Msun_age9.0'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.0 --log_m_star=5.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e5.5Msun_age9.0'
+
+# 20 Mpc
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.3 --log_m_star=5.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e5.5Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.3 --log_m_star=5.75 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e5.75Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.3 --log_m_star=6.0 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e6.0Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=20 --log_age=9.3 --log_m_star=6.25 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_20Mpc_1e6.25Msun_age9.3'
+
+# 15 Mpc
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=15 --log_age=9.3 --log_m_star=5.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_15Mpc_1e5.5Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=15 --log_age=9.3 --log_m_star=5.75 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_15Mpc_1e5.75Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=15 --log_age=9.3 --log_m_star=6.0 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_15Mpc_1e6.0Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=15 --log_age=9.3 --log_m_star=6.25 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_15Mpc_1e6.25Msun_age9.3'
+
+# 10 Mpc
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=10 --log_age=9.3 --log_m_star=5.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_10Mpc_1e5.5Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=10 --log_age=9.3 --log_m_star=5.75 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_10Mpc_1e5.75Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=10 --log_age=9.3 --log_m_star=6.0 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_10Mpc_1e6.0Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=10 --log_age=9.3 --log_m_star=6.25 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_10Mpc_1e6.25Msun_age9.3'
+
+# 5 Mpc
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=5 --log_age=9.3 --log_m_star=5.5 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_5Mpc_1e5Msun_age9.3'
+
+rosesim_gal --obs_ra=150 --obs_dec=0 --distance=5 --log_age=9.3 --log_m_star=5.75 --exptime=1080 --abs_mag_lim=0 --psftype='epsf' --fastpointsources=True --filters="['F129', 'F184']" --sky_model="/scratch/gpfs/JENNYG/jiaxuanl/Data/SBF/Rosesim/sky_jaguar_trilegal_Roman_300/" --name='Roman300_5Mpc_1e5.75Msun_age9.3'
+```
+
 
 ### Python API
 

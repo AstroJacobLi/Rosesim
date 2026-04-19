@@ -6,6 +6,7 @@ from astropy.io import fits
 import artpop
 import asdf
 import roman_datamodels as rdm
+import matplotlib.pyplot as plt
 from . import pixel_scale, DATA_PATH
 
 ######### Utility functions for Roman-I-Sim ########
@@ -388,6 +389,10 @@ def get_subpixel_dither(obs_ra, obs_dec, pattern='SUB4', subpix=True, display=Fa
             (0.0000,  0.0000),  (-0.0825, -0.0275),
             (-0.0275,  0.0550), (0.0550,   0.0825)
         ])
+    elif pattern=='SUB2':
+        dither_pattern = np.array([
+            (0.0000,  0.0000),  (0.0275, 0.0825)
+        ])
     elif pattern=='LINEGAP4_1':
         dither_pattern = np.array([
             (0.0000,  0.0000),  (-113.40, 113.40),
@@ -410,6 +415,20 @@ def get_subpixel_dither(obs_ra, obs_dec, pattern='SUB4', subpix=True, display=Fa
             (-204.32, 206.08), (0.88, 205.20),
             (-102.16, 103.04)
         ])
+    elif pattern=="BOXGAP4_1_SUB2": # a combination of BOXGAP4_1 and SUB2
+        boxgap4_1 = np.array([
+            (0.0000,  0.0000),  (-205.20, 0.88),
+            (-204.32, 206.08), (0.88, 205.20)
+        ])
+        sub2 = np.array([
+            (0.0000,  0.0000),  (0.0275, 0.0825)
+        ])
+        dither_pattern = []
+        for i in range(4):
+            baseline = boxgap4_1[i]
+            for j in range(2):
+                dither_pattern.append(baseline + sub2[j])
+        dither_pattern = np.array(dither_pattern)
     else:
         raise ValueError(f"{pattern} dither pattern not implemented yet.")
 
@@ -513,6 +532,8 @@ def _parse_dolphot_columns(columns_path, fake=False):
     filters = set()
     exptime_by_col = {}  # maps generated column name -> exptime (sec) when known
 
+    tag_filter_combos = []
+
     for line in Path(columns_path).read_text().splitlines():
         m = re.match(r"^\s*(\d+)\.\s*(.+?)\s*$", line)
         if not m:
@@ -552,6 +573,7 @@ def _parse_dolphot_columns(columns_path, fake=False):
             else:
                 name = f"{short}_{_slug(filt)}_{_slug(tag)}"
 
+            tag_filter_combos.append((tag, filt))
             # Stash exptime for this derived column (if present)
             if exptime is not None:
                 exptime_by_col[name] = float(exptime)
@@ -560,6 +582,16 @@ def _parse_dolphot_columns(columns_path, fake=False):
             name = _slug(desc)
 
         names.append(name)
+
+    # how to make tag_filter_combos unique and following the order of filter first then tag
+    # also neglect None tag
+    unique_tag_filter_combos = []
+    for tag, filt in tag_filter_combos:
+        if tag is None:
+            continue
+        if (tag, filt) not in unique_tag_filter_combos:
+            unique_tag_filter_combos.append((tag, filt))
+    tag_filter_combos = unique_tag_filter_combos
 
     # Sort filters in a Roman-like way if possible, else lexicographically
     def _fkey(f):
@@ -589,19 +621,16 @@ def _parse_dolphot_columns(columns_path, fake=False):
         exptime_by_col = new_map
 
     if fake:
-        print("Filters:", filters)
         temp = ["ext_ast", "chip_ast", "x_true", "y_true"]
-        for filt in filters:
-            temp += [f"counts_true_{filt.lower()}", f"mag_true_{filt.lower()}"]
+        # this need to be added to each filter and each tag, e.g., F106_linegap5_1_0, F106_linegap5_1_1, ...
+        # need to be unique, and following the order of filter first then tag
+        for tag, filt in tag_filter_combos:
+            temp += [f"counts_true_{_slug(filt)}_{_slug(tag)}", f"mag_true_{_slug(filt)}_{_slug(tag)}"]
         out = temp + out
-    
+
     exptime_by_col = add_coadd_exptimes(exptime_by_col)
-    
-    return out, filters, exptime_by_col
 
-import re
-
-import re
+    return out, filters, exptime_by_col, tag_filter_combos
 
 def add_coadd_exptimes(exptime_by_col):
     """
@@ -636,7 +665,7 @@ def read_dolphot_cat(path, column_path, fake=False):
     import romanisim.bandpass
     from astropy.table import Table
 
-    names, filters, exptime_by_col = _parse_dolphot_columns(column_path, fake=fake)
+    names, filters, exptime_by_col, tag_filter_combos = _parse_dolphot_columns(column_path, fake=fake)
     print("Filters:", filters)
 
     cat = Table.read(path, format="ascii.no_header", names=names)
@@ -682,10 +711,13 @@ def read_dolphot_cat(path, column_path, fake=False):
         magcol = col.replace("counts_", "mag_ab_", 1)
         cat[magcol] = -2.5 * np.log10(cat[col] / exptime / maggytoes)
 
-        if fake:
-            true_col = f"counts_true_{filt.lower()}"
+    if fake:
+        print('tag_filter_combos', tag_filter_combos)
+        for tag, filt in tag_filter_combos:
+            true_col = f"counts_true_{_slug(filt)}_{_slug(tag)}"
             if true_col in cat.colnames:
-                cat[f"mag_true_{filt.lower()}"] = -2.5 * np.log10(cat[true_col] / exptime / maggytoes)
+                print(f'Converting {true_col} to mag_true_{_slug(filt)}_{_slug(tag)}')
+                cat[f"mag_true_{_slug(filt)}_{_slug(tag)}"] = -2.5 * np.log10(cat[true_col] / exptime / maggytoes)
 
     if fake:
         for col in cat.colnames:
